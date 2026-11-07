@@ -14,8 +14,7 @@
   --navy:#1f2d57; --ink:#2a3768; --blue:#3f6fd1; --sky:#9cc0f5; --ice:#e7effc; --silver:#c9d2df;
   --paper:#fdfdff; --bg:#f4f7fd; --line:#d7e2f5; --pink:#f3a9c0;
   --hand:'Caveat',cursive; --round:'Fredoka',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
-  --ease:cubic-bezier(.22,.9,.28,1); --back:cubic-bezier(.34,1.56,.64,1);
-  --card-shadow:0 1px 0 rgba(31,45,87,.06), 0 14px 34px rgba(31,45,87,.12);
+  --ease:cubic-bezier(.22,.9,.28,1); --spd:1;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
@@ -24,6 +23,7 @@ body{font-family:var(--body); color:var(--ink); overflow:hidden; background:var(
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 :focus-visible{outline:3px dashed var(--blue);outline-offset:5px;border-radius:12px}
 svg.defs{position:absolute;width:0;height:0}
+.pre{opacity:0}
 
 /* ---------- scenes ---------- */
 .scene{
@@ -33,59 +33,73 @@ svg.defs{position:absolute;width:0;height:0}
     linear-gradient(var(--line) 1px, transparent 1px) 0 0/28px 28px,
     linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/28px 28px,
     var(--bg);
-  opacity:0; visibility:hidden; transition:opacity .45s ease, visibility 0s linear .45s;
+  opacity:0; visibility:hidden; transition:opacity calc(.9s / var(--spd)) ease, visibility 0s linear calc(.9s / var(--spd));
 }
-.scene.active{opacity:1; visibility:visible; z-index:2; transition:opacity .5s ease .25s, visibility 0s}
+.scene.active{opacity:1; visibility:visible; z-index:2; transition:opacity calc(1s / var(--spd)) ease calc(.35s / var(--spd)), visibility 0s}
 .scene.snap{transition:none!important}
-.scene.turning{z-index:6; transform-origin:0 50%; box-shadow:12px 0 40px rgba(31,45,87,.25)}
+.scene.turning{z-index:6; transform-origin:0 50%}
 /* nothing loops in a scene you can't see */
 .scene:not(.active) *{animation-play-state:paused!important}
-.wrap{position:relative; z-index:2; min-height:100%; max-width:760px; margin:0 auto; padding:84px 20px 72px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center}
-.decor{position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden}
+.turn-shade,.turn-light{position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; z-index:50}
+.turn-shade{background:linear-gradient(90deg, rgba(31,45,87,.34), rgba(31,45,87,.1) 45%, rgba(31,45,87,0) 78%)}
+.turn-light{background:linear-gradient(90deg, rgba(255,255,255,0) 20%, rgba(31,45,87,.4))}
+.iris-ring{position:fixed; z-index:9; width:40px; height:40px; margin:-20px 0 0 -20px; border-radius:50%; border:3px solid rgba(156,192,245,.95); box-shadow:0 0 28px rgba(156,192,245,.85), inset 0 0 18px rgba(156,192,245,.6); pointer-events:none}
+.wrap{position:relative; z-index:2; min-height:100%; max-width:760px; margin:0 auto; padding:84px 20px 72px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; pointer-events:none}
+.wrap > *{pointer-events:auto}
+.decor{position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden;
+  transform:translate3d(calc(var(--px,0) * -14px), calc(var(--py,0) * -10px), 0); transition:transform 1.4s cubic-bezier(.2,.8,.2,1)}
 .decor > *{position:absolute}
+.decor .sticker,.decor .bal{pointer-events:auto; cursor:pointer}
 
 /* ---------- shared bits ---------- */
 .btn{
+  position:relative; overflow:hidden;
   display:inline-flex; align-items:center; gap:.5em; margin-top:26px; padding:15px 26px; border-radius:999px;
   font-family:var(--round); font-weight:600; font-size:clamp(16px,4.3vw,19px); letter-spacing:.2px; color:#fff;
   background:linear-gradient(180deg,#5a87e3,#2f58b8); box-shadow:0 6px 0 #22448f, 0 12px 26px rgba(40,70,150,.28);
-  transition:transform .15s ease, box-shadow .15s ease, opacity .4s ease;
+  transition:transform .2s ease, box-shadow .2s ease, opacity .4s ease;
 }
+.btn::after{content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:linear-gradient(110deg, transparent 35%, rgba(255,255,255,.45) 50%, transparent 65%); transform:translateX(-130%); animation:btnshine 5.5s ease-in-out 2.5s infinite}
+@keyframes btnshine{0%,72%{transform:translateX(-130%)}90%,100%{transform:translateX(130%)}}
 .btn:hover{transform:translateY(-2px)} .btn:active{transform:translateY(4px); box-shadow:0 2px 0 #22448f, 0 6px 14px rgba(40,70,150,.25)}
 .btn.ghost{background:#fff; color:var(--navy); box-shadow:0 5px 0 var(--silver), 0 10px 20px rgba(40,70,150,.12); border:2px solid var(--silver)}
+.btn.ghost::after{background:linear-gradient(110deg, transparent 35%, rgba(156,192,245,.35) 50%, transparent 65%)}
 .btn[disabled]{opacity:.5; pointer-events:none}
-.paper{position:relative; background:var(--paper); border-radius:6px; padding:26px 24px; box-shadow:var(--card-shadow)}
+.paper{position:relative; background:var(--paper); border-radius:6px; padding:26px 24px; box-shadow:0 1px 0 rgba(31,45,87,.06), 0 14px 34px rgba(31,45,87,.12)}
 .tape{position:absolute; width:96px; height:28px; top:-13px; left:50%; transform:translateX(-50%) rotate(-3deg);
   background:repeating-linear-gradient(90deg, rgba(156,192,245,.78) 0 8px, rgba(190,214,250,.78) 8px 16px); box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .tape.t2{background:repeating-linear-gradient(45deg, rgba(201,210,223,.88) 0 6px, rgba(235,240,247,.88) 6px 12px)}
 .hint{font-family:var(--hand); font-size:22px; color:#5c6c9c; margin-top:10px}
 .squiggle{display:block; margin:10px auto 0; width:150px; height:14px; overflow:visible}
-.squiggle path{stroke-dasharray:190; stroke-dashoffset:0}
 
 /* denim-patch headings */
 .h2{font-family:var(--round); font-weight:700; font-size:clamp(32px,9vw,50px); line-height:1.08; letter-spacing:.5px;
   background:repeating-linear-gradient(55deg,#4a72bd 0 2px,#3a5fa6 2px 4px,#5a82c9 4px 5px); -webkit-background-clip:text; background-clip:text; color:transparent;
   -webkit-text-stroke:1.5px #fff; filter:drop-shadow(1.5px 0 0 #1f2d57) drop-shadow(-1.5px 0 0 #1f2d57) drop-shadow(0 1.5px 0 #1f2d57) drop-shadow(0 -1.5px 0 #1f2d57) drop-shadow(0 6px 8px rgba(31,45,87,.22))}
-
-/* stickers: placed flat on the paper */
 .sticker{filter:drop-shadow(0 3px 3px rgba(31,45,87,.28))}
 
-/* ---------- the cats (built by catSVG) ---------- */
-.kitty{overflow:visible; display:block}
-.kitty .k-eyes{transform-box:fill-box; transform-origin:center; animation:blink var(--bt,5.2s) var(--bd,0s) infinite}
+/* ---------- cats (built by catSVG) ---------- */
+.kitty{overflow:visible; display:block; pointer-events:auto; cursor:pointer}
+.kitty .k-eyes{transform-box:fill-box; transform-origin:center; animation:blink var(--bt,5.4s) var(--bd,0s) infinite}
 @keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
-.kitty .k-ear.r{transform-box:fill-box; transform-origin:40% 100%; animation:twitch 7s var(--td,2s) infinite}
+.kitty .k-ear.r{transform-box:fill-box; transform-origin:40% 100%; animation:twitch 8s var(--td,2s) infinite}
 @keyframes twitch{0%,87%,100%{transform:rotate(0)}90%{transform:rotate(-14deg)}93%{transform:rotate(6deg)}96%{transform:rotate(-3deg)}}
-.kitty .k-tail{transform-box:fill-box; transform-origin:0 100%; animation:wag 2.6s ease-in-out infinite alternate}
-@keyframes wag{from{transform:rotate(-6deg)}to{transform:rotate(7deg)}}
-.kitty .k-arms{opacity:0; transform-box:view-box; transform-origin:60px 100px; transform:scale(.5); transition:opacity .2s ease, transform .35s var(--back)}
+.kitty .k-tail{transform-box:fill-box; transform-origin:0 100%; animation:wag 3s ease-in-out infinite alternate}
+@keyframes wag{from{transform:rotate(-6deg)}to{transform:rotate(8deg)}}
+.kitty .k-head{transform-box:view-box; transform-origin:60px 96px; animation:tilt 12s ease-in-out var(--hd,3s) infinite}
+@keyframes tilt{0%,68%,100%{transform:rotate(0)}74%,88%{transform:rotate(-9deg)}}
+.kitty .k-arms{opacity:0; transform-box:view-box; transform-origin:60px 100px; transform:scale(.5); transition:opacity .25s ease, transform .45s cubic-bezier(.34,1.56,.64,1)}
 .kitty.celebrate .k-arms{opacity:1; transform:none}
-.kitty.celebrate{animation:hop .5s cubic-bezier(.3,.7,.4,1) 4}
-@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-12%)}}
+.kitty.celebrate{animation:hop .62s cubic-bezier(.3,.7,.4,1) 4}
+@keyframes hop{0%,100%{transform:translateY(0) scale(1,1)}12%{transform:translateY(0) scale(1.06,.94)}45%{transform:translateY(-12%) scale(.97,1.04)}}
+.kitty.toss{animation:hop .62s cubic-bezier(.3,.7,.4,1) 1}
 .kitty .k-wave{transform-box:view-box; transform-origin:92px 98px}
-.kitty.waving .k-wave{animation:wave .8s ease-in-out 3}
+.kitty.waving .k-wave{animation:wave 1s ease-in-out 3}
 @keyframes wave{0%,100%{transform:rotate(0)}30%{transform:rotate(-24deg)}70%{transform:rotate(14deg)}}
-.kitty.toss{animation:hop .45s cubic-bezier(.3,.7,.4,1) 1}
+.kitty .k-hat{transform-box:fill-box; transform-origin:50% 80%}
+.kitty.hats .k-hat{animation:hattoss 1.6s cubic-bezier(.3,.7,.4,1) 1}
+@keyframes hattoss{0%{transform:none}38%{transform:translateY(-62px) rotate(-180deg)}58%{transform:translateY(-70px) rotate(-290deg)}86%{transform:translateY(4px) rotate(-360deg)}100%{transform:rotate(-360deg)}}
 
 /* ---------- HUD ---------- */
 .hud{position:fixed; top:max(12px, env(safe-area-inset-top)); z-index:30; display:flex; gap:8px}
@@ -97,62 +111,81 @@ svg.defs{position:absolute;width:0;height:0}
 #motionBtn .dot{width:10px; height:10px; border-radius:50%; border:2px solid var(--navy)}
 #motionBtn[aria-pressed="true"] .dot{background:var(--navy)}
 .dots{position:fixed; left:50%; transform:translateX(-50%); bottom:max(14px, env(safe-area-inset-bottom)); z-index:30; display:flex; gap:8px}
-.dots i{width:8px; height:8px; border-radius:50%; background:var(--silver); transition:all .4s ease}
+.dots i{width:8px; height:8px; border-radius:50%; background:var(--silver); transition:all .6s ease}
 .dots i.on{width:22px; border-radius:6px; background:var(--blue)}
 @media (max-width:420px){ .pill .lbl{display:none} .pill{padding:9px 11px} }
 
 /* ---------- envelope (S1 and S4) ---------- */
-.env-stage{position:relative; margin:8px auto 0}
-.env{position:relative; width:min(88vw,430px); aspect-ratio:1.42; perspective:1100px; cursor:pointer; transition:transform .35s var(--ease)}
+.env-box{position:relative; margin:8px auto 0}
+.ground{position:absolute; left:8%; right:8%; bottom:-24px; height:30px; border-radius:50%; background:radial-gradient(closest-side, rgba(31,45,87,.3), rgba(31,45,87,0)); filter:blur(3px)}
+.env{position:relative; width:min(88vw,430px); aspect-ratio:1.42; perspective:1100px; cursor:pointer; transition:transform .55s var(--ease)}
 .env > .back,.env > .front,.env > .flap,.env > .card{position:absolute; left:0; width:100%}
-.env > .back{inset:0; height:100%; z-index:1; border-radius:10px; background:linear-gradient(160deg,#cfe0fb,#a9c6f3); box-shadow:0 14px 30px rgba(31,45,87,.2); transition:box-shadow .35s ease}
+.env > .back{inset:0; height:100%; z-index:1; border-radius:10px; background:linear-gradient(160deg,#cfe0fb,#a9c6f3); box-shadow:0 14px 30px rgba(31,45,87,.2); transition:box-shadow .55s ease}
+.env > .glow-in{position:absolute; left:6%; right:6%; top:-36%; height:84%; z-index:1; border-radius:50%; pointer-events:none;
+  background:radial-gradient(closest-side, rgba(255,250,228,.95), rgba(190,215,255,.55) 48%, rgba(190,215,255,0)); opacity:0; transform:scale(.55);
+  transition:opacity calc(1.2s / var(--spd)) ease calc(.7s / var(--spd)), transform calc(1.6s / var(--spd)) var(--ease) calc(.7s / var(--spd))}
+.env.open > .glow-in{opacity:1; transform:none}
 .env > .card{left:6%; width:88%; top:8%; height:84%; z-index:2; border-radius:6px; background:var(--paper); box-shadow:0 2px 6px rgba(0,0,0,.08);
-  display:flex; align-items:flex-start; justify-content:center; padding-top:9%; transition:transform .85s var(--ease) .3s}
+  display:flex; align-items:flex-start; justify-content:center; padding-top:9%;
+  transition:transform calc(1.3s / var(--spd)) cubic-bezier(.25,.8,.25,1) calc(.95s / var(--spd))}
 .env > .card span{font-family:var(--round); font-weight:700; font-size:clamp(18px,5vw,26px); color:var(--blue)}
 .env > .front{bottom:0; height:100%; z-index:3; border-radius:10px; overflow:hidden; pointer-events:none}
 .env > .front::before{content:""; position:absolute; inset:0; background:linear-gradient(170deg,#e3edfd,#bcd3f7); clip-path:polygon(0 0, 50% 54%, 100% 0, 100% 100%, 0 100%)}
 .env > .front::after{content:""; position:absolute; inset:0; background:linear-gradient(0deg, rgba(31,45,87,.07), transparent 40%); clip-path:polygon(0 100%, 50% 50%, 100% 100%)}
-.env > .flap{top:0; height:58%; z-index:4; transform-origin:50% 0; transform-style:preserve-3d; transition:transform .8s cubic-bezier(.5,0,.2,1), filter .8s ease, z-index 0s .4s}
-.env > .flap::before{content:""; position:absolute; inset:0; background:linear-gradient(180deg,#d7e5fc,#b3cdf5); clip-path:polygon(0 0,100% 0,50% 100%); filter:drop-shadow(0 3px 2px rgba(31,45,87,.18))}
-.env .seal{position:absolute; left:50%; top:58%; width:58px; height:58px; margin:-36px 0 0 -29px; z-index:6; border-radius:50%; overflow:hidden;
-  background:radial-gradient(circle at 35% 30%,#ffffff,#d3dbe7 45%,#9aa8bd); box-shadow:0 3px 8px rgba(31,45,87,.3), inset 0 0 0 3px rgba(255,255,255,.5); display:grid; place-items:center}
-.env .seal svg{width:28px; height:28px; fill:var(--blue); animation:pulse 2.2s ease-in-out infinite}
+.env > .flap{top:0; height:58%; z-index:4; transform-origin:50% 0; transform-style:preserve-3d;
+  transition:transform calc(1.3s / var(--spd)) cubic-bezier(.45,0,.2,1), z-index 0s calc(.64s / var(--spd))}
+.env > .flap > i{position:absolute; inset:0; -webkit-backface-visibility:hidden; backface-visibility:hidden}
+.env > .flap > .f-out{clip-path:polygon(0 0,100% 0,50% 100%); background:linear-gradient(180deg,#d7e5fc,#b3cdf5)}
+/* the envelope liner, seen once the flap folds back */
+.env > .flap > .f-in{clip-path:polygon(0 100%,100% 100%,50% 0); transform:rotateX(180deg);
+  background:radial-gradient(circle, rgba(255,255,255,.6) 1.2px, transparent 1.9px) 0 0/14px 14px, linear-gradient(0deg,#3a5fa6,#1f2d57)}
+.env .seal{position:absolute; left:50%; top:58%; width:58px; height:58px; margin:-36px 0 0 -29px; z-index:6; filter:drop-shadow(0 3px 5px rgba(31,45,87,.32))}
+.env .seal .sh{position:absolute; inset:0; border-radius:50%; overflow:hidden; display:grid; place-items:center;
+  background:radial-gradient(circle at 35% 30%,#ffffff,#d3dbe7 45%,#9aa8bd); box-shadow:inset 0 0 0 3px rgba(255,255,255,.55)}
+/* a jagged crack line, so the seal can break in two */
+.env .seal .sh.l{clip-path:polygon(0 0,53% 0,46% 28%,55% 52%,45% 76%,51% 100%,0 100%)}
+.env .seal .sh.r{clip-path:polygon(53% 0,100% 0,100% 100%,51% 100%,45% 76%,55% 52%,46% 28%)}
+.env .seal svg{width:28px; height:28px; fill:var(--blue); animation:pulse 2.8s ease-in-out infinite}
 @keyframes pulse{0%,100%{transform:scale(1)}14%{transform:scale(1.14)}28%{transform:scale(.97)}42%{transform:scale(1.08)}60%{transform:scale(1)}}
-.env .seal::after{content:""; position:absolute; inset:-20%; background:linear-gradient(115deg, transparent 40%, rgba(255,255,255,.95) 50%, transparent 60%); transform:translateX(-120%); animation:glint 4.6s ease-in-out 1.5s infinite}
-@keyframes glint{0%,70%{transform:translateX(-120%)}86%,100%{transform:translateX(120%)}}
+.env .seal .sh::after{content:""; position:absolute; inset:-20%; background:linear-gradient(115deg, transparent 40%, rgba(255,255,255,.95) 50%, transparent 60%); transform:translateX(-120%); animation:glint 5s ease-in-out 1.8s infinite}
+@keyframes glint{0%,72%{transform:translateX(-120%)}88%,100%{transform:translateX(120%)}}
 .env .addr{position:absolute; z-index:5; left:0; right:0; bottom:9%; padding:0 10%; font-family:var(--hand); color:var(--navy); line-height:1.1; pointer-events:none}
 .env .addr b{display:block; font-size:clamp(24px,6.6vw,34px); font-weight:700}
 .env .addr em{display:block; font-style:normal; font-size:clamp(19px,5vw,25px); color:#45579a}
 .env .stk{position:absolute; z-index:7; pointer-events:none}
 .env .peek{position:absolute; z-index:0; right:7%; top:-31%; width:27%}
-.env.open > .flap{transform:rotateX(180deg); filter:brightness(.88); z-index:0}
+.env.open > .flap{transform:rotateX(180deg); z-index:0}
 .env.open > .card{transform:translateY(-46%)}
 @media (hover:hover){
-  .env:not(.open):hover{transform:translateY(-7px)}
-  .env:not(.open):hover > .back{box-shadow:0 26px 44px rgba(31,45,87,.28)}
+  .env:not(.open):hover{transform:translateY(-8px)}
+  .env:not(.open):hover > .back{box-shadow:0 28px 46px rgba(31,45,87,.28)}
 }
-.env.wiggle{animation:wiggle 5s ease-in-out 1.6s infinite}
-@keyframes wiggle{0%,84%,100%{transform:rotate(0)}87%{transform:rotate(-2.2deg)}91%{transform:rotate(2deg)}95%{transform:rotate(-1deg)}}
+.env.wiggle{animation:wiggle 6.5s ease-in-out 4s infinite}
+@keyframes wiggle{0%,86%,100%{transform:rotate(0)}88.5%{transform:rotate(-2.2deg)}91.5%{transform:rotate(2deg)}94.5%{transform:rotate(-1deg)}}
 .xfer{position:fixed; z-index:20; background:var(--paper); border-radius:6px; display:flex; align-items:flex-start; justify-content:center; pointer-events:none; box-shadow:0 20px 50px rgba(31,45,87,.25)}
 .xfer span{font-family:var(--round); font-weight:700; color:var(--blue); font-size:clamp(18px,5vw,26px); margin-top:6%}
 
 /* ---------- S2 ---------- */
 .bunting{position:absolute; top:0; left:-2%; width:104%; height:90px}
-.bunting .flag{transform-box:fill-box; transform-origin:50% 0; animation:flutter 2.8s ease-in-out infinite alternate}
+.bunting .flag-g{transform-box:fill-box; transform-origin:50% 0; animation:flutter 3.2s ease-in-out infinite alternate}
+.bunting .flag{transform-box:fill-box; transform-origin:50% 0}
 @keyframes flutter{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
 .bal{position:absolute}
-.bal > svg{display:block; width:100%; height:auto; overflow:visible; transform-origin:50% 100%; animation:sway 5.5s ease-in-out infinite alternate}
-.bal.d2 > svg{animation-duration:6.6s; animation-delay:-2s} .bal.d3 > svg{animation-duration:4.8s; animation-delay:-3.4s}
-@keyframes sway{0%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(2deg) translateY(-10px)}100%{transform:rotate(3.5deg) translateY(-4px)}}
-.bstr{transform-box:fill-box; transform-origin:50% 0; animation:strsway 2.2s ease-in-out infinite alternate}
+.bal > svg{display:block; width:100%; height:auto; overflow:visible; transform-origin:50% 100%; animation:sway 6.5s ease-in-out infinite alternate}
+.bal.d2 > svg{animation-duration:7.6s; animation-delay:-2s} .bal.d3 > svg{animation-duration:5.6s; animation-delay:-3.4s}
+@keyframes sway{0%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(2deg) translateY(-12px)}100%{transform:rotate(3.5deg) translateY(-4px)}}
+.bstr{transform-box:fill-box; transform-origin:50% 0; animation:strsway 2.6s ease-in-out infinite alternate}
 @keyframes strsway{from{transform:skewX(-7deg)}to{transform:skewX(7deg)}}
+.corner-cat,.cat-in{transform-origin:50% 100%}
 .corner-cat{position:absolute; bottom:2%}
+.halo{position:absolute; left:50%; top:40px; width:min(120vw,860px); height:330px; margin-left:calc(min(120vw,860px) / -2); z-index:-1; pointer-events:none!important;
+  background:radial-gradient(closest-side, rgba(255,255,255,.85), rgba(214,230,255,.35) 50%, rgba(214,230,255,0))}
 #s2 .paper{max-width:600px; margin-top:24px; font-size:clamp(16.5px,4.3vw,19px); line-height:1.7; text-align:left}
 
 /* silver balloon lettering */
 .balloon-title{font-family:var(--round); font-weight:700; line-height:1.02; font-size:clamp(46px,13.5vw,96px); letter-spacing:.5px; filter:drop-shadow(0 3px 0 #9aa8bd) drop-shadow(0 10px 16px rgba(31,45,87,.22))}
 .balloon-title .w{display:inline-block; white-space:nowrap; margin:0 .14em}
-.balloon-title .li{display:inline-block}
+.balloon-title .li{display:inline-block; transform-origin:50% 90%}
 .balloon-title .l{
   display:inline-block;
   background-image:linear-gradient(105deg, transparent 0 40%, rgba(255,255,255,.95) 50%, transparent 60% 100%),
@@ -162,18 +195,33 @@ svg.defs{position:absolute;width:0;height:0}
 }
 .balloon-title .w.blue .l{background-image:linear-gradient(105deg, transparent 0 40%, rgba(255,255,255,.9) 50%, transparent 60% 100%),
   linear-gradient(180deg,#e6f0ff 0%,#9cc0f5 26%,#3f6fd1 55%,#9cc0f5 72%,#2f58b8 100%); -webkit-text-stroke-color:#2b4f9e}
-.balloon-title.bobbing .l{animation:bob 3.4s ease-in-out calc(var(--i) * -.23s) infinite, shine 1.3s ease-in-out calc(var(--i) * 40ms + .15s) 1 backwards}
-@keyframes bob{0%,100%{transform:translateY(0) rotate(calc(var(--r) * 1deg))}50%{transform:translateY(-6px) rotate(calc(var(--r) * -1deg))}}
-@keyframes shine{from{background-position:160% 0, 0 0}to{background-position:-70% 0, 0 0}}
+.balloon-title.bobbing .l{animation:bob 3.8s ease-in-out calc(var(--i) * -.23s) infinite, shine 8s ease-in-out var(--sd,0s) infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(calc(var(--r) * 1deg))}50%{transform:translateY(-7px) rotate(calc(var(--r) * -1deg))}}
+@keyframes shine{0%{background-position:160% 0, 0 0}14%,100%{background-position:-70% 0, 0 0}}
+
+/* ---------- fairy lights (S3, S4) ---------- */
+.fairy{position:absolute; left:-3%; width:106%; top:2px; height:70px}
+.fairy svg{position:absolute; inset:0; width:100%; height:100%; overflow:visible}
+.fairy .bulb{position:absolute; width:11px; height:15px; margin:0 0 0 -5.5px; border-radius:50% 50% 45% 45%;
+  background:radial-gradient(circle at 40% 35%, #fff, var(--c) 62%); box-shadow:0 0 10px 3px var(--g); animation:twinkle 3.4s ease-in-out var(--d) infinite}
+.fairy .bulb::before{content:""; position:absolute; left:3px; top:-4px; width:5px; height:5px; background:#8796ad; border-radius:1px}
+@keyframes twinkle{0%,100%{opacity:.55; box-shadow:0 0 4px 1px var(--g)}50%{opacity:1; box-shadow:0 0 14px 5px var(--g)}}
+#s4 .fairy .bulb{animation-duration:6s}
 
 /* ---------- S3 gallery ---------- */
 .gallery{display:grid; grid-template-columns:repeat(2,1fr); gap:34px 18px; width:100%; margin-top:30px; padding:0 4px}
 @media (min-width:720px){ .gallery{grid-template-columns:repeat(3,1fr); gap:40px 26px} }
 .pw{position:relative}
 .polaroid{position:relative; z-index:1; background:#fff; padding:9px 9px 0; border-radius:3px; cursor:pointer; transform:rotate(var(--r));
-  box-shadow:0 2px 4px rgba(31,45,87,.08), 0 12px 24px rgba(31,45,87,.14); transition:transform .35s var(--ease), box-shadow .35s ease}
-@media (hover:hover){ .polaroid:hover{transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-6px) scale(1.035); box-shadow:0 22px 36px rgba(31,45,87,.22); z-index:3} }
-.polaroid:active{transform:rotate(var(--r)) scale(.965); transition-duration:.12s}
+  box-shadow:0 2px 4px rgba(31,45,87,.08), 0 12px 24px rgba(31,45,87,.14); transition:transform .5s var(--ease), box-shadow .5s ease}
+/* holographic sheen that follows the mouse */
+.polaroid::after{content:""; position:absolute; inset:0; border-radius:3px; pointer-events:none; opacity:0; transition:opacity .45s ease; mix-blend-mode:soft-light;
+  background:radial-gradient(circle at var(--gx,50%) var(--gy,30%), rgba(255,255,255,.9), rgba(190,215,255,.35) 28%, rgba(255,255,255,0) 58%)}
+@media (hover:hover){
+  .polaroid:hover{transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(-6px) scale(1.035); box-shadow:0 22px 36px rgba(31,45,87,.22); z-index:3}
+  .polaroid:hover::after{opacity:1}
+}
+.polaroid:active{transform:rotate(var(--r)) scale(.965); transition-duration:.15s}
 .polaroid .ph{aspect-ratio:1; background:var(--ice) center/cover no-repeat; border-radius:2px; overflow:hidden; display:grid; place-items:center}
 .polaroid .ph.empty{background:repeating-linear-gradient(135deg,#eef4fe 0 12px,#e4edfc 12px 24px)}
 .polaroid .ph.empty div{font-family:var(--hand); color:#6f80b0; font-size:19px; line-height:1}
@@ -181,77 +229,91 @@ svg.defs{position:absolute;width:0;height:0}
 .polaroid p{font-family:var(--hand); font-size:clamp(17px,4.6vw,21px); line-height:1.05; color:var(--navy); padding:9px 2px 12px; min-height:3.2em; display:flex; align-items:center; justify-content:center}
 .polaroid .tape{width:70px; height:22px; top:-10px}
 .polaroid .stk{position:absolute; width:44px; height:44px; pointer-events:none; z-index:2}
-.peeker{position:absolute; z-index:0; left:14%; top:-34px; width:62px; transform:translateY(70%); animation:peekloop 11s ease-in-out var(--pd,3s) infinite}
+.peeker{position:absolute; z-index:0; left:14%; top:-34px; width:62px; transform:translateY(70%); animation:peekloop 12s ease-in-out var(--pd,3s) infinite}
 @keyframes peekloop{0%,62%,100%{transform:translateY(70%)}68%,86%{transform:translateY(0)}72%{transform:translateY(-4%) rotate(-4deg)}}
 
-/* lightbox (shared-element zoom from the tapped frame) */
+/* lightbox (the tapped frame grows into it) */
 .lb{position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:20px; visibility:hidden}
 .lb.on{visibility:visible}
-.lb-bg{position:absolute; inset:0; background:rgba(22,32,64,.62); opacity:0; transition:opacity .35s ease}
+.lb-bg{position:absolute; inset:0; background:rgba(22,32,64,.6); -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); opacity:0; transition:opacity .5s ease}
 .lb.on .lb-bg{opacity:1} .lb.closing .lb-bg{opacity:0}
 .lb-body{position:relative}
 .lb-card{background:#fff; padding:12px 12px 0; border-radius:4px; box-shadow:0 30px 60px rgba(0,0,0,.35); max-width:min(92vw,560px); transform-origin:0 0}
 .lb-img{display:block; max-width:100%; max-height:62vh; margin:0 auto; border-radius:2px}
 .lb-card p{font-family:var(--hand); font-size:clamp(22px,6vw,28px); color:var(--navy); text-align:center; padding:12px 6px 14px}
-.lb-nav{display:flex; align-items:center; justify-content:center; gap:16px; margin-top:16px; transition:opacity .3s ease}
+.lb-nav{display:flex; align-items:center; justify-content:center; gap:16px; margin-top:16px; transition:opacity .4s ease}
 .lb.closing .lb-nav,.lb.closing .lb-close{opacity:0}
 .lb-nav button{width:46px; height:46px; border-radius:50%; background:#fff; color:var(--navy); font-size:22px; box-shadow:0 6px 14px rgba(0,0,0,.2)}
 .lb-nav span{color:#fff; font-family:var(--round); font-weight:600; min-width:56px; text-align:center}
-.lb-close{position:absolute; z-index:2; top:max(14px, env(safe-area-inset-top)); right:14px; width:46px; height:46px; border-radius:50%; background:#fff; color:var(--navy); font-size:22px; box-shadow:0 6px 14px rgba(0,0,0,.2); transition:opacity .3s ease}
+.lb-close{position:absolute; z-index:2; top:max(14px, env(safe-area-inset-top)); right:14px; width:46px; height:46px; border-radius:50%; background:#fff; color:var(--navy); font-size:22px; box-shadow:0 6px 14px rgba(0,0,0,.2); transition:opacity .4s ease}
 
 /* ---------- S4 letter ---------- */
+.veil{position:fixed; inset:0; z-index:1; pointer-events:none; opacity:0; transition:opacity 2.4s ease;
+  background:radial-gradient(130% 100% at 50% 35%, rgba(255,246,232,0) 55%, rgba(70,60,110,.12))}
+.veil.on{opacity:1}
 #s4 .env{width:min(78vw,360px)}
 #s4 .env > .back{background:linear-gradient(160deg,#2f4f99,#1f2d57)}
 #s4 .env > .front::before{background:linear-gradient(170deg,#3d62b5,#26407e)}
-#s4 .env > .flap::before{background:linear-gradient(180deg,#4a70c2,#2c4b92)}
+#s4 .env > .flap > .f-out{background:linear-gradient(180deg,#4a70c2,#2c4b92)}
+#s4 .env > .flap > .f-in{background:radial-gradient(circle, rgba(63,111,209,.45) 1.2px, transparent 1.9px) 0 0/14px 14px, linear-gradient(0deg,#eef3fc,#d7e2f5)}
 #s4 .env .addr{color:#fff; bottom:12%} #s4 .env .addr b{font-size:clamp(26px,7vw,34px)}
 .letter-wrap{position:relative; width:100%; max-width:600px; margin:4px 0 46px}
-.letter{position:relative; z-index:1; text-align:left; transform-origin:50% 0;
+.letter{position:relative; z-index:1; text-align:left;
   background:linear-gradient(transparent 31px, #dfe8f8 32px) 0 14px/100% 32px, var(--paper);
   padding:34px 26px 26px 36px; font-family:var(--hand); font-size:clamp(22px,5.8vw,27px); line-height:32px; color:var(--navy); border-left:3px double #f2b8c9}
 .letter p{margin-bottom:16px}
 .letter p.greet{font-size:1.25em; font-weight:700; color:var(--blue)}
 .letter p.closing{font-weight:700; margin-bottom:4px}
 .doodle-heart{display:block; width:62px; height:56px; margin:0 0 0 auto; overflow:visible}
-.doodle-heart path{stroke-dasharray:260; stroke-dashoffset:0}
-/* peeks out from under the paper's lower-right corner */
 .letter-peek{position:absolute; z-index:0; right:16px; bottom:-52px; width:78px; transform:rotate(-7deg)}
+/* the tri-fold: three slices of the letter that unfold in 3D */
+.fold{position:absolute; inset:0; z-index:2; perspective:1500px; pointer-events:none}
+.fold .band{position:absolute; inset:0; transform-style:preserve-3d}
+.fold .face{position:absolute!important; inset:0; margin:0!important; -webkit-backface-visibility:hidden; backface-visibility:hidden}
+.fold .back{position:absolute; left:0; right:0; -webkit-backface-visibility:hidden; backface-visibility:hidden; transform:rotateX(180deg);
+  background:linear-gradient(180deg,#f6f8fd,#e8eef8); box-shadow:inset 0 0 0 1px rgba(31,45,87,.05)}
+.fold .shade{position:absolute; inset:0; pointer-events:none; opacity:0; -webkit-backface-visibility:hidden; backface-visibility:hidden; background:linear-gradient(180deg, rgba(31,45,87,.22), rgba(31,45,87,.04))}
 
 /* ---------- S5 cake ---------- */
-.cake-stage{position:relative; z-index:4; width:min(92vw,520px); margin-top:14px}
+.cake-stage{position:relative; z-index:4; width:min(92vw,520px); margin-top:14px; transition:filter .7s ease}
+.cake-stage.lightsout{filter:brightness(.5) saturate(.75)}
 .cake-stage svg.cake{display:block; width:62%; margin:0 auto; overflow:visible}
 .cake-stage .cat-in{position:absolute; bottom:0; width:27%}
 .cake g{transform-box:fill-box}
+.c-plate,.c-bot,.c-top,.c-candle{transform-origin:50% 100%}
 .fl-a{transform-origin:50% 100%; animation:flA .37s ease-in-out infinite alternate}
 .fl-b{transform-origin:50% 100%; animation:flB .61s ease-in-out infinite alternate}
 @keyframes flA{from{transform:scale(1,1)}to{transform:scale(.9,1.09)}}
 @keyframes flB{from{transform:skewX(-4deg)}to{transform:skewX(5deg) translateX(.6px)}}
 .flame-wrap{transform-origin:50% 100%}
 .glow{transform-box:fill-box; transform-origin:center; animation:glowA 2.3s ease-in-out infinite alternate, glowB 3.1s ease-in-out infinite alternate}
-@keyframes glowA{from{opacity:.32}to{opacity:.55}}
-@keyframes glowB{from{transform:scale(.92)}to{transform:scale(1.08)}}
+@keyframes glowA{from{opacity:.32}to{opacity:.6}}
+@keyframes glowB{from{transform:scale(.9)}to{transform:scale(1.1)}}
 .out .fl-a,.out .fl-b,.out .glow{animation:none}
-.smoke{opacity:0; stroke-dasharray:110; stroke-dashoffset:110}
-.dim{position:fixed; inset:0; z-index:3; pointer-events:none; opacity:0; transition:opacity .5s ease;
-  background:radial-gradient(60% 42% at 50% 46%, rgba(15,22,48,.12), rgba(15,22,48,.55))}
-.dim.on{opacity:1}
+.smoke,.breath path{opacity:0}
+.dim{position:fixed; inset:0; z-index:3; pointer-events:none; opacity:0; transition:opacity calc(1.1s / var(--spd)) ease;
+  background:radial-gradient(circle at var(--cx,50%) var(--cy,45%), rgba(255,214,140,.12) 0, rgba(15,22,48,.28) 130px, rgba(12,18,40,.74) 440px)}
+.dim::after{content:""; position:absolute; inset:0; background:rgba(10,15,35,.55); opacity:0; transition:opacity .7s ease}
+.dim.on{opacity:1} .dim.dark::after{opacity:1}
 .wish-note{max-width:520px; margin-top:18px; font-family:var(--hand); font-size:clamp(26px,7vw,34px); line-height:1.15; color:var(--navy); transform:rotate(-1deg)}
 
 /* ---------- S6 gift ---------- */
-.gift{position:relative; width:min(62vw,260px); aspect-ratio:1/1.02; margin:30px auto 0; cursor:pointer}
+.gift{position:relative; width:min(62vw,260px); aspect-ratio:1/1.02; margin:30px auto 0; cursor:pointer; transform-origin:50% 100%}
 .gift .box{position:absolute; left:6%; right:6%; bottom:0; height:66%; border-radius:6px; background:linear-gradient(180deg,#4f7fe0,#2c50a8); box-shadow:inset 0 -10px 0 rgba(0,0,0,.12), 0 16px 30px rgba(31,45,87,.3)}
 .gift .box::before{content:""; position:absolute; left:50%; top:0; bottom:0; width:16%; transform:translateX(-50%); background:linear-gradient(90deg,#b9c4d4,#f4f7fb 45%,#a7b4c7)}
 .gift .box::after{content:""; position:absolute; inset:0; border-radius:6px; background:radial-gradient(circle at 20% 30%, rgba(255,255,255,.35) 0 3px, transparent 4px) 0 0/34px 34px}
-.gift .lid{position:absolute; left:0; right:0; top:22%; height:18%; border-radius:6px; background:linear-gradient(180deg,#6b95ea,#3a63c0); box-shadow:0 6px 10px rgba(31,45,87,.25); transition:transform .9s var(--ease); transform-origin:20% 100%; z-index:2}
+.gift .lid{position:absolute; left:0; right:0; top:22%; height:18%; border-radius:6px; background:linear-gradient(180deg,#6b95ea,#3a63c0); box-shadow:0 6px 10px rgba(31,45,87,.25); transform-origin:20% 100%; z-index:2;
+  transition:transform calc(1.2s / var(--spd)) cubic-bezier(.2,.9,.3,1.15)}
 .gift .lid::before{content:""; position:absolute; left:50%; top:0; bottom:0; width:16%; transform:translateX(-50%); background:linear-gradient(90deg,#b9c4d4,#f4f7fb 45%,#a7b4c7)}
 .gift .bow{position:absolute; left:50%; bottom:100%; width:62%; transform:translateX(-50%); margin-bottom:-6px}
-.gift.idle{animation:shake 3s ease-in-out infinite}
-@keyframes shake{0%,80%,100%{transform:rotate(0)}84%{transform:rotate(-4deg)}88%{transform:rotate(4deg)}92%{transform:rotate(-3deg)}96%{transform:rotate(2deg)}}
-.gift.open .lid{transform:translate(18%,-130%) rotate(24deg)}
-.gift .rays{position:absolute; left:50%; top:40%; width:220%; aspect-ratio:1; transform:translate(-50%,-50%) scale(.3); opacity:0; z-index:-1; pointer-events:none;
+.gift.idle{animation:shake 4.2s ease-in-out 1.5s infinite}
+@keyframes shake{0%,82%,100%{transform:rotate(0)}85%{transform:rotate(-4deg)}88%{transform:rotate(4deg)}91%{transform:rotate(-3deg)}94%{transform:rotate(2deg)}}
+.gift.open .lid{transform:translate(22%,-150%) rotate(28deg)}
+.gift .rays{position:absolute; left:50%; top:40%; width:240%; aspect-ratio:1; transform:translate(-50%,-50%) scale(.3) rotate(0deg); opacity:0; z-index:-1; pointer-events:none;
   background:repeating-conic-gradient(rgba(156,192,245,.45) 0 9deg, transparent 9deg 22deg); border-radius:50%;
-  -webkit-mask:radial-gradient(circle, #000 20%, transparent 68%); mask:radial-gradient(circle, #000 20%, transparent 68%); transition:opacity .8s ease, transform 1.2s var(--ease)}
-.gift.open .rays{opacity:1; transform:translate(-50%,-50%) scale(1)}
+  -webkit-mask:radial-gradient(circle, #000 20%, transparent 68%); mask:radial-gradient(circle, #000 20%, transparent 68%);
+  transition:opacity 1.2s ease, transform 2.4s var(--ease)}
+.gift.open .rays{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(40deg)}
 .gift-msg{max-width:560px; margin-top:24px}
 .gift-msg .paper{font-size:clamp(18px,4.8vw,22px); line-height:1.6}
 .polaroid.knight{max-width:min(78vw,330px); margin:34px auto 0; cursor:default; --r:-2deg}
@@ -259,12 +321,14 @@ svg.defs{position:absolute;width:0;height:0}
 .polaroid.knight video{display:block; width:100%; aspect-ratio:4/3; object-fit:cover; background:#dfe6f0; border-radius:2px}
 .made{font-family:var(--hand); font-size:clamp(26px,7vw,32px); color:var(--blue); margin-top:22px}
 
+#amb{position:fixed; inset:0; width:100%; height:100%; z-index:8; pointer-events:none}
 #fx{position:fixed; inset:0; width:100%; height:100%; z-index:35; pointer-events:none}
 #ytHolder{position:fixed; left:-9999px; width:1px; height:1px}
 
-/* ---------- less motion: no loops, no 3D, just fades ---------- */
-.reduced *, .reduced .scene *{animation:none!important}
-.reduced .env, .reduced .polaroid, .reduced .lid, .reduced .flap{transition-duration:.2s!important}
+/* ---------- less motion: calm fades, no loops, no 3D ---------- */
+.reduced *{animation:none!important}
+.reduced .decor{transform:none!important; transition:none}
+.reduced .env > .flap,.reduced .env > .card,.reduced .env > .glow-in,.reduced .gift .lid,.reduced .gift .rays{transition-duration:.45s!important; transition-delay:0s!important}
 .reduced .polaroid:hover{transform:rotate(var(--r))}
 .reduced .peeker{transform:translateY(70%)}
 </style>
@@ -285,7 +349,6 @@ svg.defs{position:absolute;width:0;height:0}
       <rect width="5" height="5" fill="#3a5fa6"/><rect width="2.2" height="5" fill="#4b72bd"/><rect x="3.4" width=".6" height="5" fill="#2e4f8f"/>
     </pattern>
   </defs>
-  <!-- small static cat used inside empty photo frames -->
   <symbol id="cat" viewBox="0 0 120 132">
     <path d="M30 126c-6-30 7-52 30-52s36 22 30 52z" fill="#fff" stroke="#1f2d57" stroke-width="3"/>
     <path d="M29 56 33 26 54 42z M91 56 87 26 66 42z" fill="#fff" stroke="#1f2d57" stroke-width="3" stroke-linejoin="round"/>
@@ -327,29 +390,33 @@ svg.defs{position:absolute;width:0;height:0}
     <svg class="sticker" data-r="0" style="right:20%;top:6%;width:26px;fill:var(--silver)"><use href="#sparkle"/></svg>
   </div>
   <div class="wrap">
-    <div class="env-stage" id="stage1">
-      <div class="env" id="env1" role="button" tabindex="0" aria-label="Open the birthday envelope">
-        <svg class="kitty peek" id="peek1" data-paw="1" viewBox="0 0 120 132" style="--fur:#fff;--hat:#3f6fd1"></svg>
-        <div class="back"></div>
-        <div class="card"><span>Happy Birthday!</span></div>
-        <div class="front"></div>
-        <div class="flap"></div>
-        <div class="seal"><svg viewBox="0 0 100 92"><use href="#heart"/></svg></div>
-        <div class="addr"><b id="envLine1"></b><em id="envLine2"></em></div>
-        <svg class="stk sticker" data-r="-14" style="left:-6%;top:-12%;width:22%"><use href="#star"/></svg>
-        <svg class="stk sticker" data-r="18" style="right:-4%;bottom:-8%;width:13%"><use href="#star"/></svg>
-        <svg class="stk sticker" data-r="-8" style="left:7%;top:30%;width:7%;fill:#f3a9c0"><use href="#heart"/></svg>
-        <svg class="stk sticker" data-r="10" style="right:9%;top:42%;width:6%;fill:#9cc0f5"><use href="#heart"/></svg>
+    <div class="env-box">
+      <div class="ground" id="ground1"></div>
+      <div class="env-stage" id="stage1">
+        <div class="env" id="env1" role="button" tabindex="0" aria-label="Open the birthday envelope">
+          <svg class="kitty peek" id="peek1" data-paw="1" viewBox="0 0 120 132" style="--fur:#fff;--hat:#3f6fd1"></svg>
+          <div class="back"></div>
+          <div class="glow-in"></div>
+          <div class="card"><span>Happy Birthday!</span></div>
+          <div class="front"></div>
+          <div class="flap"><i class="f-out"></i><i class="f-in"></i></div>
+          <div class="seal"><div class="sh l"><svg viewBox="0 0 100 92"><use href="#heart"/></svg></div><div class="sh r"><svg viewBox="0 0 100 92"><use href="#heart"/></svg></div></div>
+          <div class="addr"><b id="envLine1"></b><em id="envLine2"></em></div>
+          <svg class="stk sticker" data-r="-14" style="left:-6%;top:-12%;width:22%"><use href="#star"/></svg>
+          <svg class="stk sticker" data-r="18" style="right:-4%;bottom:-8%;width:13%"><use href="#star"/></svg>
+          <svg class="stk sticker" data-r="-8" style="left:7%;top:30%;width:7%;fill:#f3a9c0"><use href="#heart"/></svg>
+          <svg class="stk sticker" data-r="10" style="right:9%;top:42%;width:6%;fill:#9cc0f5"><use href="#heart"/></svg>
+        </div>
       </div>
     </div>
-    <div><button class="btn" id="openBtn"></button></div>
+    <div id="openRow"><button class="btn" id="openBtn"></button></div>
   </div>
 </section>
 
 <!-- ================= S2 — greeting ================= -->
 <section class="scene" id="s2" aria-label="Birthday greeting">
   <div class="decor" aria-hidden="true">
-    <svg class="bunting" viewBox="0 0 400 90" preserveAspectRatio="none"><path d="M0 10 Q200 60 400 10" fill="none" stroke="#8796ad" stroke-width="1.5"/><g id="flags"></g></svg>
+    <svg class="bunting" viewBox="0 0 400 90" preserveAspectRatio="none"><path class="wire" d="M0 10 Q200 60 400 10" fill="none" stroke="#8796ad" stroke-width="1.5"/><g id="flags"></g></svg>
     <div class="bal" style="left:-2%;top:16%;width:min(22vw,130px)"><svg viewBox="0 0 100 170" style="--bal:url(#gSilver)"><use href="#balloon"/></svg></div>
     <div class="bal d2" style="left:10%;top:25%;width:min(15vw,90px)"><svg viewBox="0 0 100 170" style="--bal:url(#gBlue)"><use href="#balloon"/></svg></div>
     <div class="bal d3" style="right:-1%;top:14%;width:min(21vw,124px)"><svg viewBox="0 0 100 170" style="--bal:url(#gBlue)"><use href="#balloon"/></svg></div>
@@ -358,45 +425,53 @@ svg.defs{position:absolute;width:0;height:0}
     <div class="corner-cat" style="right:3%;width:min(26vw,130px)"><svg class="kitty" data-flip="1" viewBox="0 0 120 132" style="--fur:#c9d2df;--hat:#9cc0f5"></svg></div>
   </div>
   <div class="wrap">
+    <div class="halo" id="halo2"></div>
     <h1 class="balloon-title" id="greetTitle"></h1>
     <svg class="squiggle" viewBox="0 0 150 14"><path d="M3 8c12-8 18 8 30 0s18 8 30 0 18 8 30 0 18 8 30 0 12 6 24 0" fill="none" stroke="#9cc0f5" stroke-width="3" stroke-linecap="round"/></svg>
     <div class="paper" id="greetCard"><span class="tape"></span><p id="greetText"></p></div>
-    <div><button class="btn" id="toMemories"></button></div>
+    <div id="toMemRow"><button class="btn" id="toMemories"></button></div>
   </div>
 </section>
 
 <!-- ================= S3 — memory lane ================= -->
 <section class="scene" id="s3" aria-label="Our little memory lane">
   <div class="decor" aria-hidden="true">
-    <svg class="sticker" data-r="-10" style="left:3%;top:12%;width:48px"><use href="#star"/></svg>
-    <svg class="sticker" data-r="8" style="right:4%;top:10%;width:40px;fill:var(--pink)"><use href="#heart"/></svg>
-    <svg class="sticker" data-r="0" style="right:12%;top:20%;width:24px;fill:#9cc0f5"><use href="#sparkle"/></svg>
+    <div class="fairy" data-n="15"></div>
+    <svg class="sticker" data-r="-10" style="left:3%;top:14%;width:48px"><use href="#star"/></svg>
+    <svg class="sticker" data-r="8" style="right:4%;top:12%;width:40px;fill:var(--pink)"><use href="#heart"/></svg>
+    <svg class="sticker" data-r="0" style="right:12%;top:22%;width:24px;fill:#9cc0f5"><use href="#sparkle"/></svg>
   </div>
   <div class="wrap">
     <h2 class="h2" id="memTitle"></h2>
     <svg class="squiggle" viewBox="0 0 150 14"><path d="M3 8c12-8 18 8 30 0s18 8 30 0 18 8 30 0 18 8 30 0 12 6 24 0" fill="none" stroke="#9cc0f5" stroke-width="3" stroke-linecap="round"/></svg>
     <p class="hint" id="memHint"></p>
     <div class="gallery" id="gallery"></div>
-    <div><button class="btn" id="toLetter"></button></div>
+    <div id="toLetterRow"><button class="btn" id="toLetter"></button></div>
   </div>
 </section>
 
 <!-- ================= S4 — the letter ================= -->
 <section class="scene" id="s4" aria-label="A birthday letter">
   <div class="decor" aria-hidden="true">
-    <svg class="sticker" data-r="-14" style="left:5%;top:14%;width:56px"><use href="#star"/></svg>
+    <div class="fairy" data-n="13"></div>
+    <svg class="sticker" data-r="-14" style="left:5%;top:16%;width:56px"><use href="#star"/></svg>
     <div class="bal d3" style="right:5%;top:20%;width:min(16vw,90px)"><svg viewBox="0 0 100 170" style="--bal:url(#gSilver)"><use href="#balloon"/></svg></div>
   </div>
+  <div class="veil" id="veil"></div>
   <div class="wrap">
-    <div class="env-stage" id="stage4">
-      <div class="env wiggle" id="env2" role="button" tabindex="0" aria-label="Open the letter">
-        <div class="back"></div>
-        <div class="card"></div>
-        <div class="front"></div>
-        <div class="flap"></div>
-        <div class="seal"><svg viewBox="0 0 100 92"><use href="#heart"/></svg></div>
-        <div class="addr"><b id="letterLabel"></b></div>
-        <svg class="stk sticker" data-r="16" style="right:-8%;top:-14%;width:22%"><use href="#star"/></svg>
+    <div class="env-box" id="box4">
+      <div class="ground" id="ground4"></div>
+      <div class="env-stage" id="stage4">
+        <div class="env wiggle" id="env2" role="button" tabindex="0" aria-label="Open the letter">
+          <div class="back"></div>
+          <div class="glow-in"></div>
+          <div class="card"></div>
+          <div class="front"></div>
+          <div class="flap"><i class="f-out"></i><i class="f-in"></i></div>
+          <div class="seal"><div class="sh l"><svg viewBox="0 0 100 92"><use href="#heart"/></svg></div><div class="sh r"><svg viewBox="0 0 100 92"><use href="#heart"/></svg></div></div>
+          <div class="addr"><b id="letterLabel"></b></div>
+          <svg class="stk sticker" data-r="16" style="right:-8%;top:-14%;width:22%"><use href="#star"/></svg>
+        </div>
       </div>
     </div>
     <p class="hint" id="letterHint"></p>
@@ -406,7 +481,7 @@ svg.defs{position:absolute;width:0;height:0}
         <svg class="doodle-heart" viewBox="0 0 100 92" aria-hidden="true"><path d="M50 84C22 64 6 48 8 28 10 12 26 6 38 12c6 3 10 9 12 14 3-8 10-15 20-16 14-1 24 9 22 24-2 20-20 34-42 50z" fill="none" stroke="#3f6fd1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
     </div>
-    <div><button class="btn" id="toWish" hidden></button></div>
+    <div id="toWishRow" hidden><button class="btn" id="toWish"></button></div>
   </div>
 </section>
 
@@ -444,7 +519,7 @@ svg.defs{position:absolute;width:0;height:0}
           <g fill="#1f2d57"><rect x="98" y="150" width="8" height="3" rx="1.5" transform="rotate(30 102 151)"/><rect x="196" y="152" width="8" height="3" rx="1.5" transform="rotate(-25 200 153)"/></g>
         </g>
         <g class="c-candle">
-          <circle class="glow" cx="150" cy="58" r="50" fill="url(#gGlow)"/>
+          <circle class="glow" cx="150" cy="58" r="56" fill="url(#gGlow)"/>
           <rect x="143" y="72" width="14" height="52" rx="4" fill="#fff" stroke="#1f2d57" stroke-width="2.5"/>
           <path d="M143 84l14-8M143 98l14-8M143 112l14-8" stroke="#3f6fd1" stroke-width="4"/>
           <g class="flame-wrap"><g class="fl-a"><g class="fl-b">
@@ -452,12 +527,16 @@ svg.defs{position:absolute;width:0;height:0}
             <path d="M150 52c4 6 5 10 3 14-1 2-5 2-6 0-2-4-1-8 3-14z" fill="#fff3c4"/>
           </g></g></g>
           <path class="smoke" d="M150 70c-9-8 9-16 0-25s9-17 0-26-7-14 2-22" fill="none" stroke="#b9c4d4" stroke-width="4" stroke-linecap="round"/>
+          <path class="smoke" d="M153 68c8-9-6-15 2-24s-6-16 1-24" fill="none" stroke="#d3dae5" stroke-width="3" stroke-linecap="round"/>
+        </g>
+        <g class="breath" fill="none" stroke="#9cc0f5" stroke-width="3" stroke-linecap="round">
+          <path d="M-60 34C0 22 70 52 130 48"/><path d="M-70 62C-6 54 66 72 132 60"/><path d="M-52 90C10 84 76 90 130 74"/>
         </g>
       </svg>
     </div>
     <div id="blowRow"><button class="btn" id="blowBtn"></button></div>
     <p class="wish-note" id="wishNote" hidden></p>
-    <div><button class="btn ghost" id="toGift" hidden></button></div>
+    <div id="toGiftRow" hidden><button class="btn ghost" id="toGift"></button></div>
   </div>
 </section>
 
@@ -479,11 +558,11 @@ svg.defs{position:absolute;width:0;height:0}
     </div>
     <p class="hint" id="giftHint"></p>
     <div class="gift-msg" id="giftMsg" hidden>
-      <div class="paper"><span class="tape"></span><p id="giftText"></p></div>
+      <div class="paper" id="giftCard"><span class="tape"></span><p id="giftText"></p></div>
       <figure class="polaroid knight" id="knight"><span class="tape t2"></span><video id="knightVid" muted loop playsinline preload="metadata"></video><p id="knightCap"></p>
         <svg class="stk" style="right:-18px;top:-18px;width:52px;height:52px;transform:rotate(16deg)"><use href="#star"/></svg></figure>
       <p class="made" id="madeLine"></p>
-      <button class="btn ghost" id="replay"></button>
+      <div id="replayRow"><button class="btn ghost" id="replay"></button></div>
     </div>
   </div>
 </section>
@@ -498,6 +577,7 @@ svg.defs{position:absolute;width:0;height:0}
   </div>
 </div>
 
+<canvas id="amb"></canvas>
 <canvas id="fx"></canvas>
 <div id="ytHolder"></div>
 
@@ -527,6 +607,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rand = (a, b) => a + Math.random() * (b - a);
 const pick = a => a[(Math.random() * a.length) | 0];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
@@ -534,51 +615,133 @@ const store = {
 const txt = (sel, v) => { const el = $(sel); if (el) el.textContent = v || ''; return el; };
 if (C.pageTitle) document.title = C.pageTitle;
 
+/* pacing: every duration goes through T(), so animationSpeed in config.js scales the whole show */
+const SPEED = clamp(+C.animationSpeed || 1, .25, 3);
+const T = ms => ms / SPEED;
+const wait = ms => sleep(T(ms));
+document.documentElement.style.setProperty('--spd', SPEED);
+
 const state = { scene: null, run: 0, reduced: false, busy: false, pending: null };
 const alive = run => run === state.run;
-const M = ms => state.reduced ? ms * .4 : ms;
-const EASE = { out: 'cubic-bezier(.22,.9,.28,1)', back: 'cubic-bezier(.34,1.56,.64,1)', soft: 'cubic-bezier(.4,0,.2,1)', land: 'cubic-bezier(.3,.75,.3,1)' };
+const EASE = { out: 'cubic-bezier(.22,.9,.28,1)', soft: 'cubic-bezier(.4,0,.2,1)', glide: 'cubic-bezier(.25,.8,.25,1)' };
 
 /* ----------------------------------------------------------------
-   play(): one animation on one element, tagged so a scene reset can
-   cancel it. Entrances use fill:'backwards' — hidden until their turn,
-   then the element's own CSS takes over (so hover/idle still work).
-   With "Less motion" every entrance becomes a short fade.
+   play(): one animation on one element, tagged 'e' so a scene reset
+   can cancel it. Entrances use fill:'backwards' — invisible until their
+   turn, then the element's own CSS takes over (hover/idle keep working).
+   "Less motion" turns entrances into calm fades (same pacing, no movement).
    ---------------------------------------------------------------- */
 function play(el, frames, o = {}) {
-  if (!el) return Promise.resolve();
-  let opts = Object.assign({ duration: 700, easing: EASE.out, fill: 'backwards', delay: 0, id: 'e' }, o);
-  delete opts.reduced; delete opts.keep;
+  if (!el) return Promise.resolve(false);
+  if (el.classList) el.classList.remove('pre');
+  const opts = { duration: T(o.duration ?? 900), delay: T(o.delay ?? 0), easing: o.easing || EASE.out, fill: o.fill || 'backwards', id: 'e' };
   if (state.reduced) {
     if (o.reduced) frames = o.reduced;
     else if (!o.keep) frames = [{ opacity: 0 }, { opacity: 1 }];
-    opts.duration = Math.min(opts.duration, 320); opts.delay = opts.delay * .3; opts.easing = 'ease';
+    opts.duration = T(Math.min(o.duration ?? 900, 650)); opts.easing = 'ease';
   }
   const a = el.animate(frames, opts);
   return a.finished.then(() => true, () => false);
 }
 const cancelAnims = root => root.getAnimations({ subtree: true }).forEach(a => { if (a.id === 'e') a.cancel(); });
-const fadeUp = (el, delay = 0, dist = 14) => play(el, [{ opacity: 0, transform: `translateY(${dist}px)` }, { opacity: 1, transform: 'none' }], { duration: 600, delay });
-// hand-drawn lines draw themselves: dash length = path length, offset slides to 0
-const drawLine = (path, delay = 0, dur = 700) => {
+
+/* a real damped spring (stiffness from freq, damping ratio zeta), sampled into keyframes */
+const springCache = {};
+function springCurve(zeta, freq) {
+  const key = zeta + '|' + freq;
+  if (springCache[key]) return springCache[key];
+  const w = 2 * Math.PI * freq, k = w * w, c = 2 * zeta * w, dt = 1 / 240, xs = [0];
+  let x = 0, v = 0, calm = 0;
+  for (let f = 0; f < 600; f++) {
+    for (let s = 0; s < 4; s++) { const a = -k * (x - 1) - c * v; v += a * dt; x += v * dt; }
+    xs.push(x);
+    if (Math.abs(x - 1) < .0015 && Math.abs(v) < .015) { if (++calm > 4) break; } else calm = 0;
+  }
+  xs[xs.length - 1] = 1;
+  return (springCache[key] = { xs, dur: (xs.length - 1) / 60 * 1000 });
+}
+function springPlay(el, map, o = {}) {
+  const { xs, dur } = springCurve(o.zeta ?? .6, o.freq ?? 1.1);
+  const n = xs.length - 1, step = Math.max(1, Math.round(n / 70)), frames = [];
+  for (let i = 0; i <= n; i += step) frames.push(Object.assign({ offset: i / n }, map(xs[i], i / n)));
+  if (frames[frames.length - 1].offset !== 1) frames.push(Object.assign({ offset: 1 }, map(1, 1)));
+  return play(el, frames, Object.assign({}, o, { duration: dur, easing: 'linear' }));
+}
+const springTime = (o, frac = .3) => springCurve(o.zeta ?? .6, o.freq ?? 1.1).dur * frac;
+
+/* motion paths, generated as keyframes */
+function floatDown(dist = 130, swing = 7, sway = 18, turns = 1.25, n = 48) {        // something gently delivered
+  const f = [];
+  for (let i = 0; i <= n; i++) {
+    const u = i / n, e = 1 - Math.pow(1 - u, 3), env = Math.pow(1 - u, 1.6), a = u * Math.PI * 2 * turns;
+    f.push({ offset: u, opacity: Math.min(1, u * 5), transform: `translate(${(sway * Math.sin(a) * env).toFixed(1)}px,${(-dist * (1 - e)).toFixed(1)}px) rotate(${(-swing * Math.cos(a) * env).toFixed(2)}deg)` });
+  }
+  return f;
+}
+function rise(dist, sway = 22, n = 44) {                                                // a balloon floating up into place
+  const f = [];
+  for (let i = 0; i <= n; i++) {
+    const u = i / n, e = 1 - Math.pow(1 - u, 2.6), env = 1 - u, a = u * Math.PI * 2.4;
+    f.push({ offset: u, opacity: Math.min(1, u * 6), transform: `translate(${(sway * Math.sin(a) * env).toFixed(1)}px,${(dist * (1 - e)).toFixed(1)}px) rotate(${(-6 * Math.cos(a) * env).toFixed(2)}deg)` });
+  }
+  return f;
+}
+function fall(r, r0, sway, from = -160, n = 48) {                                     // a photo fluttering down onto the page
+  const f = [];
+  for (let i = 0; i <= n; i++) {
+    const u = i / n, e = 1 - Math.pow(1 - u, 2.3), env = Math.pow(1 - u, 1.5), a = u * Math.PI * 3;
+    let y = from * (1 - e); if (u > .84) y -= 5 * Math.sin((u - .84) / .16 * Math.PI);
+    f.push({ offset: u, opacity: Math.min(1, u * 5),
+      transform: `translate(${(sway * Math.cos(a) * env).toFixed(1)}px,${y.toFixed(1)}px) rotate(${(r + (r0 - r) * Math.cos(a + .5) * env).toFixed(2)}deg) scale(${(1 + .07 * env).toFixed(3)})`,
+      boxShadow: `0 2px 4px rgba(31,45,87,.08), 0 ${(12 + 26 * env).toFixed(1)}px ${(24 + 30 * env).toFixed(1)}px rgba(31,45,87,${(.14 + .08 * env).toFixed(3)})` });
+  }
+  return f;
+}
+function hopFrames(dx, dy, h, hops = 2) {                                               // little hops with squash on each landing (in % of own size)
+  const f = [{ offset: 0, opacity: 0, transform: `translate(${dx}%,${dy}%) scale(1,1)` }];
+  for (let s = 0; s < hops; s++) {
+    const a = s / hops, b = (s + 1) / hops, kp = 1 - a, k = 1 - b, height = h * (1 - s * .35);
+    f.push({ offset: a + (b - a) * .1, opacity: 1, transform: `translate(${(dx * kp).toFixed(1)}%,${(dy * kp).toFixed(1)}%) scale(.94,1.08)`, easing: 'cubic-bezier(.3,.6,.5,1)' });
+    f.push({ offset: (a + b) / 2, transform: `translate(${(dx * (k + kp) / 2).toFixed(1)}%,${(dy * (k + kp) / 2 - height).toFixed(1)}%) scale(.97,1.04)`, easing: 'cubic-bezier(.5,0,.75,.4)' });
+    f.push({ offset: b - (b - a) * .1, transform: `translate(${(dx * k).toFixed(1)}%,${(dy * k).toFixed(1)}%) scale(1.12,.86)` });
+  }
+  f.push({ offset: 1, opacity: 1, transform: 'translate(0%,0%) scale(1,1)' });
+  return f;
+}
+const fadeUp = (el, delay = 0, dist = 16, dur = 1000) => play(el, [{ opacity: 0, transform: `translateY(${dist}px)` }, { opacity: 1, transform: 'none' }], { duration: dur, delay, easing: EASE.glide });
+// hand-drawn lines draw themselves: dash = path length, offset slides to 0
+function drawLine(path, delay = 0, dur = 900) {
   const len = Math.ceil(path.getTotalLength()) + 2;
   path.style.strokeDasharray = len;
   return play(path, [{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: dur, delay, easing: EASE.soft, reduced: [{ opacity: 0 }, { opacity: 1 }] });
-};
-
-/* sticker placement: big + lifted shadow -> pressed flat onto the paper */
-function placeSticker(el, delay) {
-  const r = +(el.dataset.r || 0);
-  return play(el, [
-    { opacity: 0, transform: `scale(1.7) rotate(${r - 22}deg)`, filter: 'drop-shadow(0 18px 12px rgba(31,45,87,.28))' },
-    { opacity: 1, transform: `scale(.9) rotate(${r + 4}deg)`, filter: 'drop-shadow(0 1px 1px rgba(31,45,87,.35))', offset: .72 },
-    { opacity: 1, transform: `scale(1) rotate(${r}deg)`, filter: 'drop-shadow(0 3px 3px rgba(31,45,87,.28))' },
-  ], { duration: 520, delay, easing: EASE.land });
+}
+// handwriting write-on: a left-to-right wipe with a little sparkle riding the pen tip
+function writeOn(el, delay = 0, dur = 1300) {
+  const p = play(el, [{ clipPath: 'inset(-12% 100% -12% 0)' }, { clipPath: 'inset(-12% 0% -12% 0)' }], { duration: dur, delay, easing: 'cubic-bezier(.45,.1,.35,1)' });
+  if (!state.reduced) {
+    const run = state.run;
+    setTimeout(() => {
+      if (!alive(run)) return;
+      const r = el.getBoundingClientRect(), steps = 7;
+      for (let k = 0; k <= steps; k++) setTimeout(() => alive(run) && FX.twinkle(r.left + r.width * k / steps, r.top + r.height * rand(.25, .75), 1, 3), T(dur) * k / steps);
+    }, T(delay));
+  }
+  return p;
+}
+/* stickers: slapped on with a springy press, a glint where they land */
+function placeSticker(el, delay, run) {
+  const r = +(el.dataset.r || 0), o = { zeta: .42, freq: 1.4, delay };
+  springPlay(el, (p, u) => {
+    const q = Math.min(1, p);
+    return { opacity: Math.min(1, u * 8), transform: `scale(${lerp(1.8, 1, p).toFixed(3)}) rotate(${lerp(r - 26, r, p).toFixed(2)}deg)`,
+      filter: `drop-shadow(0 ${lerp(16, 3, q).toFixed(1)}px ${lerp(12, 3, q).toFixed(1)}px rgba(31,45,87,${lerp(.18, .28, q).toFixed(3)}))` };
+  }, o);
+  setTimeout(() => { if (!alive(run)) return; const b = el.getBoundingClientRect(); FX.twinkle(b.left + b.width / 2, b.top + b.height / 2, 3, b.width * .4); }, T(delay + springTime(o, .28)));
 }
 $$('.sticker').forEach(el => { el.style.transform = `rotate(${+(el.dataset.r || 0)}deg)`; });
 
 /* ================================================================
-   cats: inline SVG so each one can blink / twitch / wave on its own
+   cats: inline SVG so each one can blink / twitch / tilt / wave on its own
    ================================================================ */
 function catSVG(o = {}) {
   const L = '#1f2d57', F = 'style="fill:var(--fur,#fff)"', S = 'style="stroke:var(--fur,#fff)"';
@@ -591,44 +754,43 @@ function catSVG(o = {}) {
     <path d="M42 96 22 70M78 96 98 70" ${S} stroke-width="7.5" stroke-linecap="round"/></g>
   <ellipse cx="48" cy="125" rx="9" ry="5.5" ${F} stroke="${L}" stroke-width="3"/>
   <ellipse cx="72" cy="125" rx="9" ry="5.5" ${F} stroke="${L}" stroke-width="3"/>
-  <g class="k-ear l"><path d="M29 56 33 26 54 42z" ${F} stroke="${L}" stroke-width="3" stroke-linejoin="round"/><path d="M35 46 36 34 45 41z" fill="#f6b8c9"/></g>
-  <g class="k-ear r"><path d="M91 56 87 26 66 42z" ${F} stroke="${L}" stroke-width="3" stroke-linejoin="round"/><path d="M85 46 84 34 75 41z" fill="#f6b8c9"/></g>
-  <ellipse cx="60" cy="64" rx="35" ry="28" ${F} stroke="${L}" stroke-width="3"/>
-  <g class="k-eyes"><ellipse cx="47.5" cy="63" rx="4.4" ry="5.6" fill="${L}"/><ellipse cx="72.5" cy="63" rx="4.4" ry="5.6" fill="${L}"/>
-    <circle cx="49" cy="61" r="1.6" fill="#fff"/><circle cx="74" cy="61" r="1.6" fill="#fff"/></g>
-  <ellipse cx="39" cy="73" rx="6" ry="3.4" fill="#f6b8c9" opacity=".8"/><ellipse cx="81" cy="73" rx="6" ry="3.4" fill="#f6b8c9" opacity=".8"/>
-  <path d="M57 70h6l-3 3.4z" fill="#f08aa8"/>
-  <path d="M54 76q3 4 6 0q3 4 6 0" fill="none" stroke="${L}" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M30 69h-12M31 75l-11 3M90 69h12M89 75l11 3" stroke="${L}" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
-  <g class="k-hat"><g transform="rotate(-14 60 38)">
-    <path d="M45 42 60 2 75 42z" style="fill:var(--hat,#3f6fd1)" stroke="${L}" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M50 29l17 6M55 16l9 3" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
-    <circle cx="60" cy="3" r="6" fill="#fff" stroke="${L}" stroke-width="2.5"/></g></g>
+  <g class="k-head">
+    <g class="k-ear l"><path d="M29 56 33 26 54 42z" ${F} stroke="${L}" stroke-width="3" stroke-linejoin="round"/><path d="M35 46 36 34 45 41z" fill="#f6b8c9"/></g>
+    <g class="k-ear r"><path d="M91 56 87 26 66 42z" ${F} stroke="${L}" stroke-width="3" stroke-linejoin="round"/><path d="M85 46 84 34 75 41z" fill="#f6b8c9"/></g>
+    <ellipse cx="60" cy="64" rx="35" ry="28" ${F} stroke="${L}" stroke-width="3"/>
+    <g class="k-eyes"><ellipse cx="47.5" cy="63" rx="4.4" ry="5.6" fill="${L}"/><ellipse cx="72.5" cy="63" rx="4.4" ry="5.6" fill="${L}"/>
+      <circle cx="49" cy="61" r="1.6" fill="#fff"/><circle cx="74" cy="61" r="1.6" fill="#fff"/></g>
+    <ellipse cx="39" cy="73" rx="6" ry="3.4" fill="#f6b8c9" opacity=".8"/><ellipse cx="81" cy="73" rx="6" ry="3.4" fill="#f6b8c9" opacity=".8"/>
+    <path d="M57 70h6l-3 3.4z" fill="#f08aa8"/>
+    <path d="M54 76q3 4 6 0q3 4 6 0" fill="none" stroke="${L}" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M30 69h-12M31 75l-11 3M90 69h12M89 75l11 3" stroke="${L}" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
+    <g class="k-hat"><g transform="rotate(-14 60 38)">
+      <path d="M45 42 60 2 75 42z" style="fill:var(--hat,#3f6fd1)" stroke="${L}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M50 29l17 6M55 16l9 3" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="60" cy="3" r="6" fill="#fff" stroke="${L}" stroke-width="2.5"/></g></g>
+  </g>
   ${o.paw ? `<g class="k-wave"><path d="M90 98 104 50" stroke="${L}" stroke-width="13" stroke-linecap="round"/><path d="M90 98 104 50" ${S} stroke-width="7.5" stroke-linecap="round"/>
     <circle cx="105" cy="46" r="8.5" ${F} stroke="${L}" stroke-width="3"/><path d="M101 41v3M105 39v3M109 41v3" stroke="${L}" stroke-width="1.6" stroke-linecap="round"/></g>` : ''}`;
   return o.flip ? `<g transform="translate(120 0) scale(-1 1)">${body}</g>` : body;
 }
+function kittyVars(s) {
+  s.style.setProperty('--bd', rand(0, 4).toFixed(2) + 's'); s.style.setProperty('--bt', rand(4.4, 6.8).toFixed(2) + 's');
+  s.style.setProperty('--td', rand(1, 6).toFixed(2) + 's'); s.style.setProperty('--hd', rand(2, 9).toFixed(2) + 's');
+}
+// a little surprise: tap any cat and it hops and sends up hearts
+function catSurprise(k, e) {
+  e.stopPropagation();
+  if (state.reduced || k.classList.contains('celebrate')) return;
+  k.classList.remove('toss'); void k.getBoundingClientRect(); k.classList.add('toss');
+  const b = k.getBoundingClientRect(); FX.hearts(b.left + b.width / 2, b.top + b.height * .2, 4);
+}
 $$('svg.kitty').forEach(s => {
-  s.innerHTML = catSVG({ paw: !!s.dataset.paw, flip: !!s.dataset.flip });
-  s.style.setProperty('--bd', rand(0, 4).toFixed(2) + 's'); s.style.setProperty('--bt', rand(4.2, 6.5).toFixed(2) + 's');
-  s.style.setProperty('--td', rand(1, 6).toFixed(2) + 's');
+  s.innerHTML = catSVG({ paw: !!s.dataset.paw, flip: !!s.dataset.flip }); kittyVars(s);
+  s.addEventListener('click', e => catSurprise(s, e));
 });
 
 /* ================================================================
-   reduced motion (saved choice, else the device setting)
-   ================================================================ */
-const motionBtn = $('#motionBtn');
-function applyMotion() {
-  document.documentElement.classList.toggle('reduced', state.reduced);
-  motionBtn.setAttribute('aria-pressed', String(state.reduced));
-}
-const savedMotion = store.get('bday-reduced');
-state.reduced = savedMotion == null ? matchMedia('(prefers-reduced-motion: reduce)').matches : savedMotion === '1';
-applyMotion();
-motionBtn.addEventListener('click', () => { state.reduced = !state.reduced; store.set('bday-reduced', state.reduced ? '1' : '0'); applyMotion(); });
-
-/* ================================================================
-   confetti: blue / navy / silver / white pieces, stars and hearts
+   sprites + confetti (blue / navy / silver / white, stars, hearts, glints)
    ================================================================ */
 function sprite(size, draw) { const c = document.createElement('canvas'); c.width = c.height = size; draw(c.getContext('2d'), size); return c; }
 const COLORS = ['#3f6fd1', '#1f2d57', '#9cc0f5', '#c9d2df', '#ffffff', '#5a87e3'];
@@ -641,68 +803,165 @@ const heartSprite = col => sprite(64, (x, S) => {
   const p = new Path2D('M50 88C20 66 2 48 2 28 2 13 13 3 27 3c10 0 18 6 23 15C55 9 63 3 73 3c14 0 25 10 25 25 0 20-18 38-48 60z');
   x.scale(S / 100, S / 100); x.translate(0, 4); x.fillStyle = col; x.fill(p);
 });
+const glintSprite = col => sprite(64, (x, S) => {
+  x.translate(S / 2, S / 2); x.beginPath();
+  for (let i = 0; i < 8; i++) { const a = -Math.PI / 2 + i * Math.PI / 4, r = i % 2 ? S * .1 : S * .46; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+  x.closePath(); x.fillStyle = col; x.fill();
+});
 const STARS = ['#c9d2df', '#3f6fd1', '#9cc0f5'].map(starSprite);
 const HEARTS = ['#9cc0f5', '#c9d2df', '#3f6fd1', '#f3a9c0'].map(heartSprite);
+const GLINTS = ['#9cc0f5', '#3f6fd1', '#b9c4d4', '#7fa8f0'].map(glintSprite);
 
 const FX = (() => {
   const cv = $('#fx'), ctx = cv.getContext('2d');
   let W, H, dpr, P = [], running = false, last = 0;
-  const cap = () => (W < 600 ? 170 : 300) * (state.reduced ? .35 : 1);
+  const cap = () => (W < 600 ? 190 : 320) * (state.reduced ? .35 : 1);
   function resize() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; }
   function loop(now) {
-    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    const dt = Math.min(.05, (now - last) / 1000) * SPEED; last = now;
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
     for (let i = P.length - 1; i >= 0; i--) {
       const p = P[i]; p.life += dt;
-      if (p.life > p.max || p.y > H + 60) { P.splice(i, 1); continue; }
+      if (p.life > p.max || p.y > H + 80) { P.splice(i, 1); continue; }
       const dr = Math.pow(p.drag, dt);
       p.vx *= dr; p.vy = p.vy * dr + p.g * dt;
       p.x += (p.vx + Math.sin(p.life * p.sw + p.ph) * p.swA) * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
       const u = p.life / p.max;
-      ctx.globalAlpha = (u > .7 ? (1 - u) / .3 : 1) * p.a;
+      let a = p.a, size = p.size;
+      if (p.tw) size *= Math.sin(Math.min(1, u) * Math.PI); else if (u > .72) a *= (1 - u) / .28;
+      if (p.fin && p.life < p.fin) a *= p.life / p.fin;
+      ctx.globalAlpha = Math.max(0, a);
       ctx.setTransform(dpr * Math.cos(p.rot), dpr * Math.sin(p.rot), -dpr * Math.sin(p.rot), dpr * Math.cos(p.rot), dpr * p.x, dpr * p.y);
-      if (p.img) ctx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size);
-      else { ctx.scale(1, Math.cos(p.life * p.flip + p.ph)); ctx.fillStyle = p.col; ctx.fillRect(-p.size / 2, -p.size * .3, p.size, p.size * .6); }
+      if (p.img) ctx.drawImage(p.img, -size / 2, -size / 2, size, size);
+      else { ctx.scale(1, Math.cos(p.life * p.flip + p.ph)); ctx.fillStyle = p.col; ctx.fillRect(-size / 2, -size * .3, size, size * .6); }
     }
     ctx.globalAlpha = 1;
     if (P.length) requestAnimationFrame(loop); else { running = false; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); }
   }
   function add(p) {
     if (P.length >= cap()) return;
-    P.push(Object.assign({ life: 0, rot: rand(0, 6.3), vr: rand(-5, 5), drag: .5, g: 520, sw: rand(2, 5), swA: rand(10, 40), ph: rand(0, 6.3), flip: rand(5, 12), max: rand(2.4, 4), a: 1 }, p));
+    P.push(Object.assign({ life: 0, rot: rand(0, 6.3), vr: rand(-4, 4), drag: .45, g: 300, sw: rand(1.5, 3.5), swA: rand(12, 34), ph: rand(0, 6.3), flip: rand(4, 9), max: rand(3.4, 5.2), a: 1, fin: 0 }, p));
     if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
   }
   const piece = (kind = Math.random()) => kind < .14 ? { img: pick(STARS), size: rand(16, 26) } : kind < .24 ? { img: pick(HEARTS), size: rand(16, 26) } : { img: null, col: pick(COLORS), size: rand(8, 14) };
   const n = k => Math.round(k * (state.reduced ? .3 : 1));
   return {
     resize,
-    burst(x, y, k = 140, spread = 1) {
-      for (let i = 0; i < n(k); i++) { const a = -Math.PI / 2 + rand(-1.25, 1.25) * spread, sp = rand(360, 1050); add(Object.assign({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: .12 }, piece())); }
+    burst(x, y, k = 120, spread = 1) {
+      for (let i = 0; i < n(k); i++) { const a = -Math.PI / 2 + rand(-1.2, 1.2) * spread, sp = rand(260, 760); add(Object.assign({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: .3 }, piece())); }
     },
-    // a soft stream of hearts and stars rising out of an opening (envelope mouth)
+    // a slow stream of hearts and stars floating out of an opening
     trail(x, y, w, run) {
-      for (let k = 0; k < 9; k++) setTimeout(() => {
+      for (let k = 0; k < 12; k++) setTimeout(() => {
         if (!alive(run)) return;
-        for (let i = 0; i < n(3); i++) add({ x: x + rand(-w / 2, w / 2), y, vx: rand(-70, 70), vy: rand(-460, -280), g: 240, drag: .55, img: Math.random() < .55 ? pick(HEARTS) : pick(STARS), size: rand(14, 24), max: rand(1.6, 2.4), vr: rand(-2, 2) });
-      }, k * 70);
+        for (let i = 0; i < n(2); i++) add({ x: x + rand(-w / 2, w / 2), y, vx: rand(-50, 50), vy: rand(-300, -170), g: 110, drag: .7, img: Math.random() < .55 ? pick(HEARTS) : pick(STARS), size: rand(14, 24), max: rand(2.6, 3.6), vr: rand(-1.5, 1.5), swA: rand(8, 20), fin: .25 });
+      }, T(k * 100));
     },
-    // a little handful thrown up and outwards (dir -1 = left, 1 = right)
+    // tiny 4-point glints that pop and vanish
+    twinkle(x, y, k = 3, spread = 14) {
+      if (state.reduced) return;
+      for (let i = 0; i < k; i++) add({ x: x + rand(-spread, spread), y: y + rand(-spread, spread), vx: rand(-14, 14), vy: rand(-26, -6), g: 0, drag: .5, img: pick(GLINTS), size: rand(10, 20), max: rand(.55, .95), tw: true, vr: rand(-1, 1), swA: 0 });
+    },
+    hearts(x, y, k = 4) {
+      for (let i = 0; i < n(k); i++) add({ x: x + rand(-14, 14), y, vx: rand(-30, 30), vy: rand(-130, -80), g: -10, drag: .85, img: pick(HEARTS), size: rand(14, 22), max: rand(1.6, 2.4), swA: rand(8, 16), vr: rand(-.6, .6), rot: rand(-.3, .3), fin: .15 });
+    },
     toss(x, y, dir) {
-      for (let i = 0; i < n(22); i++) { const a = -Math.PI / 2 + dir * rand(.1, .7), sp = rand(380, 640); add(Object.assign({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: .3, max: rand(1.8, 2.8) }, piece())); }
+      for (let i = 0; i < n(20); i++) { const a = -Math.PI / 2 + dir * rand(.1, .65), sp = rand(300, 520); add(Object.assign({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: .4 }, piece())); }
     },
-    // confetti cannons from a bottom corner, aimed up and inwards
+    // confetti cannons from the bottom corners, aimed mostly upward so the middle stays readable
     cannon(side) {
-      const x = side < 0 ? -10 : W + 10, y = H * .92;
-      for (let i = 0; i < n(80); i++) { const a = -Math.PI / 2 - side * rand(.06, .34), sp = rand(650, 1150); add(Object.assign({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: .18 }, piece())); }
+      const x = side < 0 ? -10 : W + 10, y = H * .94;
+      for (let i = 0; i < n(70); i++) { const a = -Math.PI / 2 - side * rand(.02, .15) * Math.min(1, W / 900), sp = rand(560, 940); add(Object.assign({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: .4, g: 260, swA: rand(6, 16) }, piece())); }
     },
-    // gentle falling confetti that keeps to the left and right edges
-    edges(k = 50) {
-      for (let i = 0; i < n(k); i++) { const left = Math.random() < .5, x = left ? rand(0, W * .17) : rand(W * .83, W); add(Object.assign({ x, y: rand(-H * .4, -20), vx: rand(-20, 20), vy: rand(40, 120), g: 50, drag: .9, max: rand(4, 6.5), swA: rand(6, 16) }, piece(Math.random() * .9 + .1))); }
+    // slow falling confetti that keeps to the left and right edges
+    edges(k = 40) {
+      for (let i = 0; i < n(k); i++) { const left = Math.random() < .5, x = left ? rand(0, W * .17) : rand(W * .83, W); add(Object.assign({ x, y: rand(-H * .5, -20), vx: rand(-15, 15), vy: rand(30, 80), g: 25, drag: .95, max: rand(6, 8.5), swA: rand(6, 16) }, piece(Math.random() * .9 + .1))); }
     },
-    calm() { P.forEach(p => { p.max = Math.min(p.max, p.life + .6); }); },
+    // sparkles shooting up out of the gift
+    fountain(x, y, run) {
+      for (let k = 0; k < 10; k++) setTimeout(() => {
+        if (!alive(run)) return;
+        for (let i = 0; i < n(7); i++) { const a = -Math.PI / 2 + rand(-.38, .38), sp = rand(420, 700); add(Object.assign({ x: x + rand(-20, 20), y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: .45, g: 330 }, piece())); }
+      }, T(k * 90));
+    },
+    calm() { P.forEach(p => { p.max = Math.min(p.max, p.life + .8); }); },
   };
 })();
 FX.resize();
+
+/* ================================================================
+   ambient glitter: drifting silver dust + soft light blobs, with parallax
+   ================================================================ */
+const Amb = (() => {
+  const cv = $('#amb'), ctx = cv.getContext('2d');
+  let W, H, dpr, motes = [], orbs = [], on = false, last = 0, tick = 0, mood = 1, px = 0, py = 0;
+  const blob = col => sprite(128, (x, S) => { const g = x.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2); g.addColorStop(0, `rgba(${col},.55)`); g.addColorStop(.6, `rgba(${col},.18)`); g.addColorStop(1, `rgba(${col},0)`); x.fillStyle = g; x.fillRect(0, 0, S, S); });
+  const ORB = ['156,192,245', '201,210,223', '127,168,240'].map(blob);
+  function build() {
+    motes = Array.from({ length: W < 600 ? 14 : 24 }, () => ({ x: rand(0, W), y: rand(0, H), s: rand(5, 11), vy: -rand(6, 16), sw: rand(.3, .9), ph: rand(0, 6.3), tw: rand(.5, 1.4), img: pick(GLINTS), d: rand(.4, 1) }));
+    orbs = Array.from({ length: W < 600 ? 4 : 7 }, () => ({ x: rand(0, W), y: rand(0, H), r: rand(70, 170), vx: rand(-7, 7), vy: rand(-6, 6), img: pick(ORB), a: rand(.25, .5), d: rand(.5, 1.4) }));
+  }
+  function resize() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; build(); }
+  function loop(now) {
+    if (!on) return;
+    requestAnimationFrame(loop);
+    if (++tick % 2) return;                              // ~30 fps is plenty for drifting dust
+    const dt = Math.min(.1, (now - last) / 1000); last = now;
+    const t = now / 1000;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    for (const o of orbs) {
+      o.x += o.vx * dt; o.y += o.vy * dt;
+      if (o.x < -o.r) o.x = W + o.r; if (o.x > W + o.r) o.x = -o.r; if (o.y < -o.r) o.y = H + o.r; if (o.y > H + o.r) o.y = -o.r;
+      ctx.globalAlpha = o.a * mood;
+      ctx.drawImage(o.img, o.x - px * 30 * o.d - o.r, o.y - py * 22 * o.d - o.r, o.r * 2, o.r * 2);
+    }
+    for (const m of motes) {
+      m.y += m.vy * dt; m.x += Math.sin(t * m.sw + m.ph) * 10 * dt;
+      if (m.y < -20) { m.y = H + 20; m.x = rand(0, W); }
+      const tw = .5 + .5 * Math.sin(t * m.tw * 2 + m.ph), s = m.s * (.7 + .5 * tw);
+      ctx.globalAlpha = (.25 + .6 * tw) * mood;
+      ctx.drawImage(m.img, m.x - px * 14 * m.d - s / 2, m.y - py * 10 * m.d - s / 2, s, s);
+    }
+    ctx.globalAlpha = 1;
+  }
+  return {
+    resize,
+    start() { if (on || state.reduced || document.hidden) return; on = true; last = performance.now(); requestAnimationFrame(loop); },
+    stop() { on = false; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); },
+    mood(m) { mood = m; },
+    look(x, y) { px = x; py = y; },
+  };
+})();
+Amb.resize();
+document.addEventListener('visibilitychange', () => { if (document.hidden) Amb.stop(); else Amb.start(); });
+// gentle depth: decorations drift opposite the mouse (or phone tilt where allowed)
+let lookX = 0, lookY = 0, lookRaf = 0;
+function setLook(x, y) {
+  lookX = clamp(x, -1, 1); lookY = clamp(y, -1, 1);
+  if (lookRaf) return;
+  lookRaf = requestAnimationFrame(() => {
+    lookRaf = 0;
+    document.documentElement.style.setProperty('--px', lookX.toFixed(3)); document.documentElement.style.setProperty('--py', lookY.toFixed(3));
+    Amb.look(lookX, lookY);
+  });
+}
+addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && !state.reduced) setLook(e.clientX / innerWidth * 2 - 1, e.clientY / innerHeight * 2 - 1); });
+addEventListener('deviceorientation', e => { if (!state.reduced && e.gamma != null) setLook(e.gamma / 30, (e.beta - 45) / 30); });
+// every tap leaves a tiny sparkle
+addEventListener('pointerdown', e => FX.twinkle(e.clientX, e.clientY, 4, 10), { passive: true });
+
+/* ================================================================
+   reduced motion (saved choice, else the device setting)
+   ================================================================ */
+const motionBtn = $('#motionBtn');
+function applyMotion() {
+  document.documentElement.classList.toggle('reduced', state.reduced);
+  motionBtn.setAttribute('aria-pressed', String(state.reduced));
+  if (state.reduced) { Amb.stop(); setLook(0, 0); } else Amb.start();
+}
+const savedMotion = store.get('bday-reduced');
+state.reduced = savedMotion == null ? matchMedia('(prefers-reduced-motion: reduce)').matches : savedMotion === '1';
+motionBtn.addEventListener('click', () => { state.reduced = !state.reduced; store.set('bday-reduced', state.reduced ? '1' : '0'); applyMotion(); });
 
 /* ================================================================
    music: never automatic — only the Play button starts it.
@@ -770,16 +1029,16 @@ const Music = (() => {
     const g = ctx.createGain(); g.gain.value = v; s.connect(bp); bp.connect(g); g.connect(master); s.start(t);
   }
   return {
-    paper: () => sfx(t => noise(t, .5, 3000, 900, .12)),
-    chime: () => sfx(t => [84, 88, 91, 96].forEach((m, i) => tine(m, t + i * .09, .12, master))),
-    pop: () => sfx(t => { noise(t, .35, 2000, 500, .25); [79, 84, 88, 91, 96].forEach((m, i) => tine(m, t + .05 + i * .07, .1, master)); }),
-    blow: () => sfx(t => noise(t, .9, 700, 300, .35)),
-    tick: () => sfx(t => tine(pick([91, 93, 96]), t, .05, master)),
+    paper: () => sfx(t => noise(t, .6, 3000, 900, .12)),
+    chime: () => sfx(t => [84, 88, 91, 96].forEach((m, i) => tine(m, t + i * .11, .12, master))),
+    pop: () => sfx(t => { noise(t, .35, 2000, 500, .25); [79, 84, 88, 91, 96].forEach((m, i) => tine(m, t + .05 + i * .08, .1, master)); }),
+    blow: () => sfx(t => noise(t, 1.1, 700, 260, .35)),
+    whoosh: () => sfx(t => noise(t, .9, 380, 2600, .1)),
   };
 })();
 
 /* ================================================================
-   text from config.js
+   text from config.js + generated decorations
    ================================================================ */
 const E = C.envelope || {}, G = C.greeting || {}, MEM = C.memories || {}, L = C.letter || {}, WSH = C.wish || {}, GF = C.gift || {};
 txt('#envLine1', E.line1); txt('#envLine2', E.line2); txt('#openBtn', E.button);
@@ -789,11 +1048,11 @@ txt('#letterLabel', L.label); txt('#letterHint', L.hint); txt('#toWish', L.butto
 txt('#wishTitle', WSH.title); txt('#blowBtn', WSH.button); txt('#wishNote', WSH.after); txt('#toGift', WSH.next);
 txt('#giftTitle', GF.title); txt('#giftHint', GF.hint); txt('#giftText', GF.message); txt('#madeLine', GF.footer); txt('#replay', GF.replay);
 
-// balloon lettering: word > entry span > letter span; the last word in blue
-const titleLetters = [];
+// balloon lettering: word > entry span (inflates) > letter span (bobs + shines); the last word in blue
+const title = $('#greetTitle'), titleLetters = [];
 (() => {
-  const h = $('#greetTitle'), words = String(G.title || 'Happy Birthday!').split(' ');
-  h.setAttribute('aria-label', G.title || '');
+  const words = String(G.title || 'Happy Birthday!').split(' ');
+  title.setAttribute('aria-label', G.title || '');
   let i = 0;
   words.forEach((w, wi) => {
     const ws = document.createElement('span'); ws.className = 'w' + (wi === words.length - 1 ? ' blue' : ''); ws.setAttribute('aria-hidden', 'true');
@@ -802,21 +1061,57 @@ const titleLetters = [];
       const s = document.createElement('span'); s.className = 'l'; s.textContent = ch; s.style.setProperty('--i', i); s.style.setProperty('--r', ((i * 37) % 7) - 3);
       li.appendChild(s); ws.appendChild(li); titleLetters.push(li); i++;
     }
-    h.appendChild(ws); h.appendChild(document.createTextNode(' '));
+    title.appendChild(ws); title.appendChild(document.createTextNode(' '));
   });
 })();
-// bunting flags along the curve
+// the silver sweep crosses the whole title: each letter starts its shine by its position
+function measureShine() {
+  const tw = Math.max(1, title.offsetWidth), tl = title.offsetLeft;
+  titleLetters.forEach(li => li.firstChild.style.setProperty('--sd', ((li.offsetLeft - tl) / tw * .9 + .3).toFixed(2) + 's'));
+}
+// bunting: each flag hangs in its own group so it can flutter and unfurl separately
 (() => {
-  const g = $('#flags'), cols = ['#1f2d57', '#c9d2df', '#3f6fd1', '#ffffff', '#9cc0f5'];
+  const g = $('#flags'), cols = ['#1f2d57', '#c9d2df', '#3f6fd1', '#ffffff', '#9cc0f5'], NS = 'http://www.w3.org/2000/svg';
   for (let i = 0; i < 17; i++) {
     const u = (i + .5) / 17, x = u * 400, y = 10 + 50 * u * (1 - u) * 2;
-    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const gg = document.createElementNS(NS, 'g'); gg.setAttribute('class', 'flag-g'); gg.style.animationDelay = (-i * .23).toFixed(2) + 's';
+    const p = document.createElementNS(NS, 'path');
     p.setAttribute('d', `M${x - 10} ${y} L${x + 10} ${y} L${x} ${y + 26} Z`); p.setAttribute('class', 'flag');
     p.setAttribute('fill', cols[i % cols.length]); p.setAttribute('stroke', '#8796ad'); p.setAttribute('stroke-width', '1');
-    p.style.animationDelay = (-i * .23).toFixed(2) + 's';
-    g.appendChild(p);
+    gg.appendChild(p); g.appendChild(gg);
   }
 })();
+// fairy lights strung across the top of a page
+$$('.fairy').forEach(el => {
+  const n = +el.dataset.n || 14;
+  el.innerHTML = '<svg viewBox="0 0 100 70" preserveAspectRatio="none"><path class="wire" d="M0 6 Q25 44 50 20 T100 8" fill="none" stroke="#8796ad" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>';
+  const Q = (t, a, c, b) => (1 - t) * (1 - t) * a + 2 * (1 - t) * t * c + t * t * b;
+  const COL = [['#9cc0f5', 'rgba(110,160,240,.75)'], ['#ffffff', 'rgba(156,192,245,.85)'], ['#ffe3a6', 'rgba(255,200,120,.7)'], ['#c9d2df', 'rgba(150,170,200,.7)']];
+  for (let i = 0; i < n; i++) {
+    const u = (i + .5) / n, first = u < .5, t = first ? u * 2 : (u - .5) * 2;
+    const x = first ? Q(t, 0, 25, 50) : Q(t, 50, 75, 100), y = first ? Q(t, 6, 44, 20) : Q(t, 20, -4, 8);
+    const b = document.createElement('i'); b.className = 'bulb'; const [c, gl] = COL[i % COL.length];
+    b.style.cssText = `left:${x.toFixed(2)}%;top:${y.toFixed(1)}px;--c:${c};--g:${gl};--d:${(-i * .37).toFixed(2)}s`;
+    el.appendChild(b);
+  }
+});
+function lightFairy(scene, b) {
+  const f = $('.fairy', scene); if (!f) return;
+  play($('svg', f), [{ opacity: 0 }, { opacity: 1 }], { duration: 900, delay: b });
+  $$('.bulb', f).forEach((bl, i) => play(bl, [{ opacity: 0, transform: 'scale(.2)' }, { opacity: 1, transform: 'scale(1.35)', offset: .5 }, { opacity: 1, transform: 'none' }], { duration: 700, delay: b + 300 + i * 110, easing: EASE.soft }));
+}
+// tap a balloon: it bobs up; tap a sticker: it spins
+function balloonBop(bl) {
+  if (state.reduced) return;
+  play(bl, [{ transform: 'none' }, { transform: 'translateY(-30px) rotate(-5deg)', offset: .35 }, { transform: 'translateY(6px) rotate(2deg)', offset: .7 }, { transform: 'none' }], { duration: 1300, easing: 'ease-in-out', keep: true, fill: 'none' });
+  const b = bl.getBoundingClientRect(); FX.twinkle(b.left + b.width / 2, b.top + b.width * .3, 4, b.width * .3);
+}
+$$('.bal').forEach(bl => bl.addEventListener('click', () => balloonBop(bl)));
+$$('.decor .sticker').forEach(st => st.addEventListener('click', () => {
+  if (state.reduced) return;
+  const r = +(st.dataset.r || 0);
+  play(st, [{ transform: `rotate(${r}deg) scale(1)` }, { transform: `rotate(${r + 200}deg) scale(1.3)`, offset: .5 }, { transform: `rotate(${r + 360}deg) scale(1)` }], { duration: 1000, easing: EASE.soft, keep: true, fill: 'none' });
+}));
 
 /* ================================================================
    photos: polaroids, placeholders, auto file-type detection
@@ -849,23 +1144,25 @@ const gallery = $('#gallery'), frames = [];
 photos.forEach((p, i) => {
   const w = document.createElement('div'); w.className = 'pw';
   if (PEEKERS[i]) {
-    const pk = document.createElement('div'); pk.className = 'peeker'; pk.style.setProperty('--pd', (3 + i * 2.7).toFixed(1) + 's');
+    const pk = document.createElement('div'); pk.className = 'peeker pre'; pk.style.setProperty('--pd', (3 + i * 2.7).toFixed(1) + 's');
     pk.innerHTML = `<svg class="kitty" viewBox="0 0 120 132" style="${PEEKERS[i]}">${catSVG()}</svg>`;
+    const k = $('svg', pk); kittyVars(k); k.addEventListener('click', e => catSurprise(k, e));
     w.appendChild(pk);
   }
   const f = document.createElement('figure');
-  f.className = 'polaroid'; f.tabIndex = 0; f.setAttribute('role', 'button'); f.setAttribute('aria-label', 'Open photo ' + (i + 1));
+  f.className = 'polaroid pre'; f.tabIndex = 0; f.setAttribute('role', 'button'); f.setAttribute('aria-label', 'Open photo ' + (i + 1));
   const r = [-3, 2.5, -1.5, 3, -2.5, 1.5][i % 6]; f.style.setProperty('--r', r + 'deg'); f.dataset.r = r;
   f.innerHTML = `<span class="tape${i % 2 ? ' t2' : ''}"></span><div class="ph empty"><div>${PH_ICON}your photo here</div></div><p></p>${STICKERS[i % STICKERS.length]}`;
   $('p', f).textContent = p.caption;
   loadPhoto(p).then(ok => { if (!ok) return; const ph = $('.ph', f); ph.classList.remove('empty'); ph.innerHTML = ''; ph.style.backgroundImage = `url("${p.url}")`; });
   f.addEventListener('click', () => LB.open(i));
   f.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); LB.open(i); } });
-  // desktop hover tilt toward the pointer
+  // desktop: tilt toward the mouse, with a sheen that follows it
   f.addEventListener('pointermove', e => {
     if (e.pointerType !== 'mouse' || state.reduced) return;
-    const b = f.getBoundingClientRect(), px = (e.clientX - b.left) / b.width - .5, py = (e.clientY - b.top) / b.height - .5;
-    f.style.setProperty('--ry', (px * 12).toFixed(1) + 'deg'); f.style.setProperty('--rx', (-py * 10).toFixed(1) + 'deg');
+    const b = f.getBoundingClientRect(), px = (e.clientX - b.left) / b.width, py = (e.clientY - b.top) / b.height;
+    f.style.setProperty('--ry', ((px - .5) * 12).toFixed(1) + 'deg'); f.style.setProperty('--rx', ((.5 - py) * 10).toFixed(1) + 'deg');
+    f.style.setProperty('--gx', (px * 100).toFixed(0) + '%'); f.style.setProperty('--gy', (py * 100).toFixed(0) + '%');
   });
   f.addEventListener('pointerleave', () => { f.style.removeProperty('--rx'); f.style.removeProperty('--ry'); });
   w.appendChild(f); gallery.appendChild(w); frames.push(f);
@@ -884,11 +1181,12 @@ function swipeDirection(dx, dy) {
 const LB = (() => {
   const lb = $('#lb'), card = $('#lbCard'), img = $('#lbImg'), cap = $('#lbCap'), count = $('#lbCount');
   let idx = 0, lastFocus = null, hidden = null, closing = false;
-  function show(i) {
+  function show(i, write) {
     idx = (i + photos.length) % photos.length;
     const p = photos[idx];
     img.src = p.url || placeholderURL(p); img.alt = p.caption;
     cap.textContent = p.caption; count.textContent = `${idx + 1} / ${photos.length}`;
+    if (write) writeOn(cap, 0, 900);
   }
   const flipFrom = (r, to) => `translate(${r.left - to.left}px,${r.top - to.top}px) scale(${r.width / to.width},${r.height / to.height})`;
   const onScreen = r => r.bottom > 0 && r.top < innerHeight && r.width > 0;
@@ -896,12 +1194,13 @@ const LB = (() => {
     if (lb.classList.contains('on')) return;
     lastFocus = document.activeElement; show(i);
     lb.classList.remove('closing'); lb.classList.add('on');
-    if (img.complete === false) await new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 400); });
+    if (!img.complete) await new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 400); });
     const from = frames[idx].getBoundingClientRect(), to = card.getBoundingClientRect();
     if (!state.reduced && onScreen(from)) {
       hidden = frames[idx]; hidden.style.visibility = 'hidden';
-      play(card, [{ transform: flipFrom(from, to) + ` rotate(${frames[idx].dataset.r}deg)`, boxShadow: '0 12px 24px rgba(31,45,87,.14)' }, { transform: 'none', boxShadow: '0 30px 60px rgba(0,0,0,.35)' }], { duration: 560, easing: EASE.out });
-    } else play(card, [{ opacity: 0 }, { opacity: 1 }], { duration: 250 });
+      play(card, [{ transform: flipFrom(from, to) + ` rotate(${frames[idx].dataset.r}deg)`, boxShadow: '0 12px 24px rgba(31,45,87,.14)' }, { transform: 'none', boxShadow: '0 30px 60px rgba(0,0,0,.35)' }], { duration: 820, easing: EASE.out });
+    } else play(card, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
+    writeOn(cap, 500, 900);
     $('#lbClose').focus({ preventScroll: true });
   }
   async function close() {
@@ -911,29 +1210,31 @@ const LB = (() => {
     if (hidden && hidden !== target) hidden.style.visibility = '';
     if (!state.reduced && onScreen(to)) {
       target.style.visibility = 'hidden'; hidden = target;
-      await play(card, [{ transform: 'none' }, { transform: flipFrom(to, from) + ` rotate(${target.dataset.r}deg)` }], { duration: 460, easing: EASE.soft, fill: 'forwards', keep: true });
-    } else await play(card, [{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards', keep: true });
+      await play(card, [{ transform: 'none' }, { transform: flipFrom(to, from) + ` rotate(${target.dataset.r}deg)` }], { duration: 680, easing: EASE.soft, fill: 'forwards', keep: true });
+    } else await play(card, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards', keep: true });
     if (hidden) hidden.style.visibility = ''; hidden = null;
     lb.classList.remove('on', 'closing'); card.getAnimations().forEach(a => a.cancel());
     closing = false;
     if (lastFocus) lastFocus.focus({ preventScroll: true });
   }
   $('#lbClose').addEventListener('click', close);
-  $('#lbPrev').addEventListener('click', () => show(idx - 1));
-  $('#lbNext').addEventListener('click', () => show(idx + 1));
+  $('#lbPrev').addEventListener('click', () => show(idx - 1, true));
+  $('#lbNext').addEventListener('click', () => show(idx + 1, true));
   $('#lbBg').addEventListener('click', close);
   document.addEventListener('keydown', e => {
     if (!lb.classList.contains('on')) return;
-    if (e.key === 'Escape') close(); else if (e.key === 'ArrowRight') show(idx + 1); else if (e.key === 'ArrowLeft') show(idx - 1);
+    if (e.key === 'Escape') close(); else if (e.key === 'ArrowRight') show(idx + 1, true); else if (e.key === 'ArrowLeft') show(idx - 1, true);
   });
   let sx = 0, sy = 0;
   lb.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-  lb.addEventListener('touchend', e => { const t = e.changedTouches[0], dir = swipeDirection(t.clientX - sx, t.clientY - sy); if (dir) show(idx + dir); });
+  lb.addEventListener('touchend', e => { const t = e.changedTouches[0], dir = swipeDirection(t.clientX - sx, t.clientY - sy); if (dir) show(idx + dir, true); });
   return { open, close, get isOpen() { return lb.classList.contains('on'); } };
 })();
 
 /* ================================================================
-   scene machinery: one transition at a time, hash kept in sync
+   scene machinery: one transition at a time, hash kept in sync.
+   Transitions: instant | fade | turn (page turn) | iris (circle from the
+   tapped button) | dolly (camera pushes through the page)
    ================================================================ */
 const ORDER = ['s1', 's2', 's3', 's4', 's5', 's6'];
 const dots = $('#dots'); ORDER.forEach(() => dots.appendChild(document.createElement('i')));
@@ -952,26 +1253,50 @@ async function go(id, how = {}) {
   state.scene = id;
   [...dots.children].forEach((d, i) => d.classList.toggle('on', ORDER[i] === id));
   cancelAnims(next); if (reset[id]) reset[id](); next.scrollTop = 0;
-  const turn = how.turn && cur && !state.reduced;
-  if (turn) {
-    // scrapbook page turn: the old page swings away on its left edge, the next page waits underneath
-    next.classList.add('snap', 'active'); if (enter[id]) enter[id](run, 150);
-    cur.classList.add('turning');
-    await cur.animate([
-      { transform: 'perspective(1800px) rotateY(0deg)', filter: 'brightness(1)' },
-      { transform: 'perspective(1800px) rotateY(-70deg)', filter: 'brightness(.9)', offset: .6 },
-      { transform: 'perspective(1800px) rotateY(-100deg)', filter: 'brightness(.75)', opacity: 0 },
-    ], { duration: 850, easing: 'cubic-bezier(.5,.05,.4,1)', fill: 'forwards' }).finished.catch(() => {});
-    cur.classList.add('snap'); cur.classList.remove('active', 'turning'); cur.getAnimations().forEach(a => a.cancel());
-    await sleep(20); cur.classList.remove('snap'); next.classList.remove('snap');
-  } else if (how.instant || !cur) {
+  const type = !cur ? 'instant' : state.reduced ? 'fade' : (how.type || 'fade');
+  if (type === 'turn' || type === 'iris' || type === 'dolly') Music.whoosh();
+
+  if (type === 'instant') {
     if (cur) { cur.classList.add('snap'); cur.classList.remove('active'); }
-    next.classList.add('snap', 'active'); if (enter[id]) enter[id](run, 0);
-    await sleep(30); if (cur) cur.classList.remove('snap'); next.classList.remove('snap');
+    next.classList.add('snap', 'active'); if (enter[id]) enter[id](run, cur ? 0 : 300);
+    await sleep(40); if (cur) cur.classList.remove('snap'); next.classList.remove('snap');
+  } else if (type === 'turn') {
+    // scrapbook page turn: the old page swings away on its left edge, its shadow sweeping off the page beneath
+    next.classList.add('snap', 'active'); if (enter[id]) enter[id](run, 500);
+    const shade = document.createElement('div'); shade.className = 'turn-shade'; shade.style.position = 'fixed'; next.appendChild(shade);
+    const light = document.createElement('div'); light.className = 'turn-light'; Object.assign(light.style, { top: cur.scrollTop + 'px', bottom: 'auto', height: innerHeight + 'px' }); cur.appendChild(light);
+    cur.classList.add('turning');
+    const D = T(1450);
+    light.animate([{ opacity: 0 }, { opacity: .3, offset: .4 }, { opacity: 1 }], { duration: D, fill: 'forwards' });
+    shade.animate([{ opacity: 1 }, { opacity: .75, offset: .5 }, { opacity: 0 }], { duration: D + T(350), fill: 'forwards' });
+    await cur.animate([
+      { transform: 'perspective(2000px) rotateY(0deg) scale(1)' },
+      { transform: 'perspective(2000px) rotateY(-26deg) scale(1.015)', offset: .35 },
+      { transform: 'perspective(2000px) rotateY(-90deg) scale(1.02)' }], { duration: D, easing: 'cubic-bezier(.55,.06,.45,.98)', fill: 'forwards' }).finished.catch(() => {});
+    cur.classList.add('snap'); cur.classList.remove('active', 'turning'); cur.getAnimations().forEach(a => a.cancel()); light.remove();
+    await sleep(T(350)); shade.remove(); cur.classList.remove('snap'); next.classList.remove('snap');
+  } else if (type === 'iris') {
+    // the next page opens as a circle growing out of the button that was tapped
+    const [x, y] = how.origin || [innerWidth / 2, innerHeight / 2];
+    const R = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 30;
+    next.style.zIndex = 7; next.classList.add('snap', 'active'); if (enter[id]) enter[id](run, 500);
+    const ring = document.createElement('div'); ring.className = 'iris-ring'; Object.assign(ring.style, { left: x + 'px', top: y + 'px' }); document.body.appendChild(ring);
+    ring.animate([{ transform: 'scale(.2)', opacity: 1 }, { transform: `scale(${(R / 20).toFixed(2)})`, opacity: 0 }], { duration: T(1300), easing: 'cubic-bezier(.65,0,.35,1)', fill: 'forwards' }).finished.then(() => ring.remove(), () => ring.remove());
+    await next.animate([{ clipPath: `circle(0px at ${x}px ${y}px)` }, { clipPath: `circle(${R}px at ${x}px ${y}px)` }], { duration: T(1250), easing: 'cubic-bezier(.65,0,.35,1)' }).finished.catch(() => {});
+    cur.classList.add('snap'); cur.classList.remove('active'); next.style.zIndex = '';
+    await sleep(40); cur.classList.remove('snap'); next.classList.remove('snap');
+  } else if (type === 'dolly') {
+    // camera pushes through the old page into a calmer, softer one
+    next.style.zIndex = 7; next.classList.add('snap', 'active'); if (enter[id]) enter[id](run, 900);
+    cur.classList.add('snap');
+    cur.animate([{ transform: 'scale(1)', filter: 'blur(0px)', opacity: 1 }, { transform: 'scale(1.1)', filter: 'blur(9px)', opacity: 0 }], { duration: T(1150), easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' });
+    await next.animate([{ transform: 'scale(.94)', filter: 'blur(8px)', opacity: 0 }, { transform: 'scale(1)', filter: 'blur(0px)', opacity: 1 }], { duration: T(1350), delay: T(350), easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' }).finished.catch(() => {});
+    cur.classList.remove('active'); cur.getAnimations().forEach(a => a.cancel()); next.style.zIndex = '';
+    await sleep(40); cur.classList.remove('snap'); next.classList.remove('snap');
   } else {
     cur.classList.remove('active'); next.classList.add('active');
-    if (enter[id]) enter[id](run, 280);
-    await sleep(M(750));
+    if (enter[id]) enter[id](run, 700);
+    await wait(1300);
   }
   state.busy = false;
   if (state.pending) { const [pid, ph] = state.pending; state.pending = null; go(pid, ph); }
@@ -979,6 +1304,16 @@ async function go(id, how = {}) {
 const hashScene = () => (/^#s[1-6]$/.test(location.hash) ? location.hash.slice(1) : 's1');
 addEventListener('popstate', () => go(hashScene()));
 addEventListener('hashchange', () => go(hashScene()));
+const nav = (btn, id, type) => btn.addEventListener('click', () => go(id, { push: true, type, origin: centerOf(btn) }));
+
+/* the wax seal cracks along its jagged line and the halves tumble away */
+function sealCrack(env, run) {
+  const seal = $('.seal', env), [l, r] = $$('.sh', seal);
+  play(seal, [{ transform: 'scale(1)' }, { transform: 'scale(1.14)', offset: .35 }, { transform: 'scale(1)' }], { duration: 450, keep: true, fill: 'none' });
+  setTimeout(() => { if (!alive(run)) return; const [x, y] = centerOf(seal); FX.twinkle(x, y, 5, 16); }, T(330));
+  play(l, [{ transform: 'none', opacity: 1 }, { transform: 'translate(-2px,0) rotate(-7deg)', opacity: 1, offset: .3 }, { transform: 'translate(-30px,56px) rotate(-55deg)', opacity: 0 }], { duration: 950, delay: 300, fill: 'forwards', keep: true, easing: 'cubic-bezier(.45,0,.75,.55)', reduced: [{ opacity: 1 }, { opacity: 0 }] });
+  return play(r, [{ transform: 'none', opacity: 1 }, { transform: 'translate(2px,0) rotate(7deg)', opacity: 1, offset: .3 }, { transform: 'translate(30px,60px) rotate(58deg)', opacity: 0 }], { duration: 950, delay: 300, fill: 'forwards', keep: true, easing: 'cubic-bezier(.45,0,.75,.55)', reduced: [{ opacity: 1 }, { opacity: 0 }] });
+}
 
 /* ================================================================
    S1 — the envelope
@@ -987,46 +1322,49 @@ const env1 = $('#env1'), stage1 = $('#stage1'), peek1 = $('#peek1'), openBtn = $
 let opened1 = false;
 reset.s1 = () => { opened1 = false; env1.classList.remove('open'); peek1.classList.remove('waving'); openBtn.disabled = true; $$('.xfer').forEach(x => x.remove()); };
 enter.s1 = (run, b) => {
-  // the envelope drops in, tips a little, settles
-  play(stage1, [
-    { opacity: 0, transform: 'translateY(-70px) rotate(-7deg) scale(.92)' },
-    { opacity: 1, transform: 'translateY(6px) rotate(2.5deg) scale(1.01)', offset: .55 },
-    { transform: 'translateY(-3px) rotate(-1.2deg)', offset: .78 },
-    { transform: 'none' }], { duration: 950, delay: b, easing: EASE.land });
-  // stickers pressed on one at a time
-  $$('#s1 .sticker').forEach((s, i) => placeSticker(s, b + 750 + i * 100));
-  // the cat peeks up from behind the envelope, then waves
-  play(peek1, [{ transform: 'translateY(70%)' }, { transform: 'translateY(-6%)', offset: .7 }, { transform: 'none' }], { duration: 700, delay: b + 1900, easing: EASE.out, reduced: [{ opacity: 0 }, { opacity: 1 }] });
-  setTimeout(() => alive(run) && !state.reduced && peek1.classList.add('waving'), b + 2550);
-  fadeUp(openBtn.parentElement, b + 1500);
-  setTimeout(() => { if (alive(run) && !opened1) openBtn.disabled = false; }, M(b + 1100));
+  // the envelope is delivered: it drifts down with a soft swing and lands on its own shadow
+  play(stage1, floatDown(140, 7, 18, 1.25), { duration: 1900, delay: b, easing: 'linear' });
+  play($('#ground1'), [{ opacity: 0, transform: 'scale(.4)' }, { opacity: 1, transform: 'none' }], { duration: 1800, delay: b + 100, easing: EASE.soft });
+  // stickers pressed on, one at a time
+  const st = $$('#s1 .sticker');
+  st.forEach((s, i) => placeSticker(s, b + 1700 + i * 230, run));
+  // the cat peeks up from behind, looks around, waves, and sends up a heart
+  const peekAt = b + 1700 + st.length * 230 + 300;
+  springPlay(peek1, (p, u) => ({ transform: `translateY(${lerp(72, 0, p).toFixed(2)}%)`, opacity: Math.min(1, u * 6) }), { zeta: .55, freq: .9, delay: peekAt, reduced: [{ opacity: 0 }, { opacity: 1 }] });
+  setTimeout(() => { if (!alive(run) || state.reduced) return; peek1.classList.add('waving'); }, T(peekAt + 1100));
+  setTimeout(() => { if (!alive(run)) return; const b2 = peek1.getBoundingClientRect(); FX.hearts(b2.left + b2.width * .5, b2.top, 3); }, T(peekAt + 1900));
+  fadeUp($('#openRow'), b + 2000, 18, 1100);
+  setTimeout(() => { if (alive(run) && !opened1) openBtn.disabled = false; }, T(b + 2100));
 };
-const s1Ready = () => !openBtn.disabled;
 async function openEnvelope() {
-  if (opened1 || state.scene !== 's1' || !s1Ready()) return;
+  if (opened1 || state.scene !== 's1' || openBtn.disabled) return;
   opened1 = true; openBtn.disabled = true;
-  const run = state.run, seal = $('.seal', env1);
+  const run = state.run;
   peek1.classList.remove('waving'); Music.paper();
-  // the seal lets go first…
-  await play(seal, [{ transform: 'none', opacity: 1 }, { transform: 'translateY(-8px) scale(1.15) rotate(-12deg)', opacity: 1, offset: .35 }, { transform: 'translateY(26px) scale(.6) rotate(25deg)', opacity: 0 }], { duration: 420, fill: 'forwards', keep: true, easing: EASE.soft });
+  play($('#openRow'), [{ opacity: 1 }, { opacity: 0, transform: 'translateY(10px)' }], { duration: 600, fill: 'forwards', keep: true });
+  // the cat ducks out of sight, the seal cracks…
+  play(peek1, [{ transform: 'none' }, { transform: 'translateY(-8%)', offset: .25 }, { transform: 'translateY(76%)' }], { duration: 650, fill: 'forwards', keep: true, easing: EASE.soft, reduced: [{ opacity: 1 }, { opacity: 0 }] });
+  await sealCrack(env1, run);
   if (!alive(run)) return;
-  env1.classList.add('open');                       // …then the flap folds back and the card slides up
-  await sleep(M(650)); if (!alive(run)) return;
+  env1.classList.add('open');                 // …the flap folds back to show its starry liner, light spills out, the card rises
+  await wait(1350); if (!alive(run)) return;
   const r = env1.getBoundingClientRect();
-  FX.trail(r.left + r.width / 2, r.top + r.height * .15, r.width * .5, run); Music.pop();
-  await sleep(M(900)); if (!alive(run)) return;
-  // the card grows into the next page
-  const card = $('.card', env1), cr = card.getBoundingClientRect();
+  FX.trail(r.left + r.width / 2, r.top + r.height * .12, r.width * .5, run); Music.chime();
+  await wait(1700); if (!alive(run)) return;
   if (state.reduced) return go('s2', { push: true });
+  // the card grows into the next page, its little title swelling toward the big one
+  const card = $('.card', env1), cr = card.getBoundingClientRect();
   const x = document.createElement('div'); x.className = 'xfer'; x.innerHTML = '<span>Happy Birthday!</span>';
   Object.assign(x.style, { left: cr.left + 'px', top: cr.top + 'px', width: cr.width + 'px', height: cr.height + 'px' });
   document.body.appendChild(x);
+  Music.whoosh();
+  x.firstChild.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateY(50px) scale(2.2)', opacity: 1, offset: .7 }, { transform: 'translateY(64px) scale(2.6)', opacity: 0 }], { duration: T(1200), easing: EASE.soft, fill: 'forwards' });
   await x.animate([
     { left: cr.left + 'px', top: cr.top + 'px', width: cr.width + 'px', height: cr.height + 'px', borderRadius: '6px' },
-    { left: '0px', top: '0px', width: innerWidth + 'px', height: innerHeight + 'px', borderRadius: '0px' }], { duration: 650, easing: EASE.soft, fill: 'forwards' }).finished.catch(() => {});
+    { left: '0px', top: '0px', width: innerWidth + 'px', height: innerHeight + 'px', borderRadius: '0px' }], { duration: T(1150), easing: 'cubic-bezier(.65,0,.3,1)', fill: 'forwards' }).finished.catch(() => {});
   if (!alive(run)) { x.remove(); return; }
-  await go('s2', { push: true, instant: true });
-  x.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 450, easing: 'ease', fill: 'forwards' }).finished.then(() => x.remove(), () => x.remove());
+  await go('s2', { push: true, type: 'instant' });
+  x.animate([{ opacity: 1 }, { opacity: 0 }], { duration: T(900), easing: 'ease', fill: 'forwards' }).finished.then(() => x.remove(), () => x.remove());
 }
 env1.addEventListener('click', openEnvelope);
 env1.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEnvelope(); } });
@@ -1035,77 +1373,107 @@ openBtn.addEventListener('click', openEnvelope);
 /* ================================================================
    S2 — Happy Birthday, Bebe!
    ================================================================ */
-const title = $('#greetTitle'), greetCard = $('#greetCard');
+const greetCard = $('#greetCard');
+let shineMeasured = false;
 reset.s2 = () => { title.classList.remove('bobbing'); $$('#s2 .kitty').forEach(k => k.classList.remove('toss')); };
 enter.s2 = (run, b) => {
-  $$('#flags .flag').forEach((f, i) => play(f, [{ opacity: 0, transform: 'translateY(-26px)' }, { opacity: 1, transform: 'none' }], { duration: 500, delay: b + i * 35, easing: EASE.back }));
-  // balloons float up from the lower edge
-  $$('#s2 .bal').forEach((bl, i) => play(bl, [{ opacity: 0, transform: `translateY(${Math.round(innerHeight * .85)}px)` }, { opacity: 1, offset: .15 }, { transform: 'none' }], { duration: 1700, delay: b + 150 + i * 120, easing: 'cubic-bezier(.2,.7,.3,1)' }));
-  // letters arrive in little groups with a balloon bounce
-  titleLetters.forEach((li, i) => play(li, [
-    { opacity: 0, transform: 'translateY(46px) scale(.3)' },
-    { opacity: 1, transform: 'translateY(-9px) scale(1.12)', offset: .55 },
-    { transform: 'translateY(3px) scale(.97)', offset: .8 },
-    { transform: 'none' }], { duration: 700, delay: b + 250 + Math.floor(i / 3) * 110, easing: EASE.soft }));
-  const lettersDone = b + 250 + Math.floor((titleLetters.length - 1) / 3) * 110 + 700;
-  setTimeout(() => alive(run) && title.classList.add('bobbing'), lettersDone);   // starts the bob + one silver sweep
-  drawLine($('#s2 .squiggle path'), lettersDone - 200);
-  // the card is set down, then its tape is pressed on
-  play(greetCard, [
-    { opacity: 0, transform: 'translateY(-28px) rotate(-4deg) scale(1.06)', boxShadow: '0 1px 0 rgba(31,45,87,0), 0 44px 60px rgba(31,45,87,.22)' },
-    { opacity: 1, transform: 'translateY(3px) rotate(.6deg) scale(.995)', boxShadow: '0 1px 0 rgba(31,45,87,.06), 0 6px 14px rgba(31,45,87,.14)', offset: .72 },
-    { transform: 'none', boxShadow: '0 1px 0 rgba(31,45,87,.06), 0 14px 34px rgba(31,45,87,.12)' }], { duration: 750, delay: lettersDone - 100, easing: EASE.land });
-  play($('.tape', greetCard), [
-    { opacity: 0, transform: 'translateX(-50%) translateY(-16px) rotate(-14deg) scale(1.3)' },
-    { opacity: 1, transform: 'translateX(-50%) rotate(-3deg) scaleX(1.05) scaleY(.82)', offset: .7 },
-    { transform: 'translateX(-50%) rotate(-3deg)' }], { duration: 420, delay: lettersDone + 600, easing: EASE.soft });
-  fadeUp($('#toMemories').parentElement, lettersDone + 900);
-  // cats bounce into the corners, then toss a little confetti outwards
-  $$('#s2 .corner-cat').forEach((c, i) => play(c, [
-    { opacity: 0, transform: 'translateY(140%)' }, { opacity: 1, transform: 'translateY(-14%)', offset: .6 }, { transform: 'translateY(4%)', offset: .82 }, { transform: 'none' }],
-    { duration: 800, delay: b + 600 + i * 150, easing: EASE.soft }));
+  if (!shineMeasured) { measureShine(); shineMeasured = true; }
+  const t0 = b + 400;
+  // the bunting is strung up and its flags unfurl
+  drawLine($('#s2 .bunting .wire'), t0, 1100);
+  $$('#flags .flag').forEach((f, i) => springPlay(f, p => ({ transform: `scaleY(${Math.max(0, p).toFixed(3)})`, opacity: Math.min(1, Math.max(0, p) * 3) }), { zeta: .45, freq: 1.2, delay: t0 + 350 + i * 65 }));
+  // balloons float up from below and find their places
+  $$('#s2 .bal').forEach((bl, i) => play(bl, rise(Math.round(innerHeight * .9), 24), { duration: 3800, delay: t0 + 300 + i * 380, easing: 'linear' }));
+  // the letters inflate in little groups, each with a pop of glitter
+  const G3 = 3, step = 260, start = t0 + 900, o = { zeta: .5, freq: 1.05 };
+  titleLetters.forEach((li, i) => {
+    const d = start + Math.floor(i / G3) * step;
+    // grows from a flat little foil into a round letter: a touch wider while small, a touch taller as it overshoots
+    springPlay(li, p => { const s = Math.max(.02, Math.min(p, 1.12)), sy = Math.max(.02, s * (1 + (p - 1) * .25)); return { transform: `translateY(${((1 - Math.min(p, 1)) * 30).toFixed(1)}px) scale(${s.toFixed(3)},${sy.toFixed(3)})`, opacity: Math.min(1, Math.max(0, p) * 2.2) }; }, Object.assign({ delay: d }, o));
+    if (i % G3 === 1) setTimeout(() => { if (!alive(run)) return; const r = li.getBoundingClientRect(); FX.twinkle(r.left + r.width / 2, r.top + r.height * .4, 3, r.width); }, T(d + springTime(o, .3)));
+  });
+  const done = start + Math.floor((titleLetters.length - 1) / G3) * step + springTime(o, .6);
+  setTimeout(() => alive(run) && title.classList.add('bobbing'), T(done));                 // bob + the silver sweep
+  play($('#halo2'), [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 1600, delay: done - 600, easing: EASE.soft });
+  drawLine($('#s2 .squiggle path'), done - 200, 1100);
+  // the card is set down, its text comes into focus, then the tape is smoothed on
+  springPlay(greetCard, (p, u) => {
+    const q = Math.min(1, p);
+    return { opacity: Math.min(1, u * 5), transform: `translateY(${lerp(-36, 0, p).toFixed(1)}px) rotate(${lerp(-5, 0, p).toFixed(2)}deg) scale(${lerp(1.06, 1, p).toFixed(3)})`,
+      boxShadow: `0 1px 0 rgba(31,45,87,.06), 0 ${lerp(46, 14, q).toFixed(1)}px ${lerp(64, 34, q).toFixed(1)}px rgba(31,45,87,${lerp(.2, .12, q).toFixed(3)})` };
+  }, { zeta: .8, freq: .7, delay: done + 100 });
+  play($('#greetText'), [{ opacity: 0, filter: 'blur(6px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 1300, delay: done + 700, easing: 'ease-out' });
+  springPlay($('.tape', greetCard), p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `translateX(-50%) translate(${lerp(70, 0, p).toFixed(1)}px,${lerp(-10, 0, p).toFixed(1)}px) rotate(${lerp(-16, -3, p).toFixed(2)}deg) scale(${lerp(1.2, 1, p).toFixed(3)},${(1 - Math.abs(1 - p) * .35).toFixed(3)})` }), { zeta: .5, freq: 1.3, delay: done + 1300 });
+  fadeUp($('#toMemRow'), done + 2100, 18, 1100);
+  // the cats hop into the corners, then toss confetti outwards
+  $$('#s2 .corner-cat').forEach((c, i) => play(c, hopFrames(0, 150, 45, 2), { duration: 1400, delay: t0 + 1700 + i * 300, easing: 'linear' }));
   setTimeout(() => {
     if (!alive(run)) return;
     $$('#s2 .corner-cat').forEach((c, i) => {
-      const k = $('.kitty', c); k.classList.remove('toss'); void k.offsetWidth; k.classList.add('toss');
+      const k = $('.kitty', c); k.classList.remove('toss'); void k.getBoundingClientRect(); k.classList.add('toss');
       const r = c.getBoundingClientRect(); FX.toss(r.left + r.width / 2, r.top + r.height * .3, i ? 1 : -1);
     });
-    FX.edges(40);
-  }, b + 1750);
+    FX.edges(36);
+  }, T(t0 + 3600));
 };
-$('#toMemories').addEventListener('click', () => go('s3', { push: true, turn: true }));
+nav($('#toMemories'), 's3', 'turn');
 
 /* ================================================================
-   S3 — memory lane
+   S3 — memory lane (photos land as they scroll into view)
    ================================================================ */
-enter.s3 = (run, b) => {
-  play($('#memTitle'), [{ opacity: 0, transform: 'translateY(-24px) scale(.9)' }, { opacity: 1, transform: 'scale(1.04)', offset: .7 }, { transform: 'none' }], { duration: 650, delay: b, easing: EASE.soft });
-  drawLine($('#s3 .squiggle path'), b + 350);
-  fadeUp($('#memHint'), b + 450);
-  $$('#s3 .decor .sticker').forEach((s, i) => placeSticker(s, b + 500 + i * 110));
-  frames.forEach((f, i) => {
-    const d = b + 550 + i * 110, r = +f.dataset.r, r0 = r + (i % 2 ? 1 : -1) * rand(12, 24), dx = rand(-50, 50);
-    // each photo is dropped in from its own angle and settles
-    play(f, [
-      { opacity: 0, transform: `translate(${dx}px,-90px) rotate(${r0}deg) scale(1.12)`, boxShadow: '0 40px 50px rgba(31,45,87,.25)' },
-      { opacity: 1, transform: `translate(0,5px) rotate(${r - (r0 - r) * .12}deg) scale(.99)`, boxShadow: '0 4px 8px rgba(31,45,87,.18)', offset: .7 },
-      { transform: `rotate(${r}deg)`, boxShadow: '0 2px 4px rgba(31,45,87,.08), 0 12px 24px rgba(31,45,87,.14)' }], { duration: 650, delay: d, easing: EASE.land });
-    play($('.tape', f), [
-      { opacity: 0, transform: 'translateX(-50%) translateY(-14px) rotate(-16deg) scale(1.35)' },
-      { opacity: 1, transform: 'translateX(-50%) rotate(-3deg) scaleY(.8)', offset: .7 },
-      { transform: 'translateX(-50%) rotate(-3deg)' }], { duration: 380, delay: d + 560, easing: EASE.soft });
-    play($('p', f), [{ opacity: 0, clipPath: 'inset(0 100% 0 0)' }, { opacity: 1, clipPath: 'inset(0 0 0 0)' }], { duration: 600, delay: d + 760, easing: EASE.soft });
-    const pk = $('.peeker', f.parentElement); if (pk) play(pk, [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: d + 600 });
-    const st = $('.stk', f); if (st) play(st, [{ opacity: 0, transform: (st.style.transform || '') + ' scale(1.6)' }, { opacity: 1, transform: st.style.transform || 'none' }], { duration: 380, delay: d + 900, easing: EASE.back });
-  });
-  fadeUp($('#toLetter').parentElement, b + 550 + frames.length * 110 + 900);
+const toLetterRow = $('#toLetterRow');
+let galleryIO = null, dropQ = [], dropBusy = false;
+reset.s3 = () => {
+  if (galleryIO) galleryIO.disconnect();
+  dropQ = []; dropBusy = false;
+  frames.forEach(f => { f.classList.add('pre'); f.style.visibility = ''; });
+  $$('.peeker', gallery).forEach(p => p.classList.add('pre'));
+  toLetterRow.classList.add('pre');
 };
-$('#toLetter').addEventListener('click', () => go('s4', { push: true }));
+leave.s3 = () => { if (galleryIO) galleryIO.disconnect(); };
+function dropFrame(f, run) {
+  const i = frames.indexOf(f), r = +f.dataset.r, r0 = r + (i % 2 ? 1 : -1) * rand(14, 26);
+  play(f, fall(r, r0, rand(26, 44) * (i % 2 ? -1 : 1), -170), { duration: 1500, easing: 'linear' });
+  springPlay($('.tape', f), p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `translateX(-50%) translateY(${lerp(-16, 0, p).toFixed(1)}px) rotate(${lerp(-18, -3, p).toFixed(2)}deg) scale(${lerp(1.35, 1, p).toFixed(3)},${(1 - Math.abs(1 - p) * .4).toFixed(3)})` }), { zeta: .5, freq: 1.3, delay: 1150 });
+  writeOn($('p', f), 1400, 1100);
+  const st = $('.stk', f);
+  if (st) { const base = st.style.transform || ''; springPlay(st, p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `${base} scale(${lerp(1.8, 1, p).toFixed(3)})` }), { zeta: .42, freq: 1.4, delay: 1900 }); }
+  const pk = $('.peeker', f.parentElement); if (pk) play(pk, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 1500 });
+  // a puff of glitter where it lands
+  setTimeout(() => { if (!alive(run)) return; const b = f.getBoundingClientRect(); FX.twinkle(b.left + 6, b.bottom - 6, 2, 8); FX.twinkle(b.right - 6, b.bottom - 6, 2, 8); }, T(1300));
+}
+function pumpDrops(run) {
+  if (dropBusy || !alive(run)) return;
+  const f = dropQ.shift(); if (!f) return;
+  dropBusy = true; dropFrame(f, run);
+  setTimeout(() => { dropBusy = false; pumpDrops(run); }, T(300));
+}
+function startGallery(run) {
+  if (galleryIO) galleryIO.disconnect();
+  galleryIO = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting || !alive(run)) return;
+      galleryIO.unobserve(e.target);
+      if (e.target === toLetterRow) fadeUp(toLetterRow, 900, 18, 1100);
+      else { dropQ.push(e.target); pumpDrops(run); }
+    });
+  }, { root: $('#s3'), threshold: .15 });
+  frames.forEach(f => galleryIO.observe(f)); galleryIO.observe(toLetterRow);
+}
+enter.s3 = (run, b) => {
+  lightFairy($('#s3'), b + 200);
+  springPlay($('#memTitle'), (p, u) => ({ opacity: Math.min(1, u * 4), transform: `translateY(${lerp(-30, 0, p).toFixed(1)}px) scale(${lerp(.8, 1, p).toFixed(3)}) rotate(${lerp(-4, 0, p).toFixed(2)}deg)` }), { zeta: .5, freq: .95, delay: b + 300 });
+  drawLine($('#s3 .squiggle path'), b + 1000, 1000);
+  fadeUp($('#memHint'), b + 1300, 12, 1000);
+  $$('#s3 .decor .sticker').forEach((s, i) => placeSticker(s, b + 1200 + i * 230, run));
+  setTimeout(() => alive(run) && startGallery(run), T(b + 1500));
+};
+nav($('#toLetter'), 's4', 'dolly');
 
 /* ================================================================
    S4 — the letter (calmer)
    ================================================================ */
-const env2 = $('#env2'), stage4 = $('#stage4'), letterWrap = $('#letterWrap'), letter = $('#letter');
+const env2 = $('#env2'), stage4 = $('#stage4'), box4 = $('#box4'), letterWrap = $('#letterWrap'), letter = $('#letter'), veil = $('#veil');
 (L.paragraphs || []).forEach((t, i, a) => {
   const p = document.createElement('p'); p.textContent = t;
   if (i === 0) p.className = 'greet'; else if (i === a.length - 1) p.className = 'closing';
@@ -1113,102 +1481,161 @@ const env2 = $('#env2'), stage4 = $('#stage4'), letterWrap = $('#letterWrap'), l
 });
 let opened2 = false;
 reset.s4 = () => {
-  opened2 = false; env2.classList.remove('open'); env2.classList.add('wiggle'); stage4.hidden = false;
-  letterWrap.hidden = true; $('#letterHint').hidden = false; $('#toWish').hidden = true;
+  opened2 = false; env2.classList.remove('open'); env2.classList.add('wiggle'); box4.hidden = false;
+  letterWrap.hidden = true; letter.style.visibility = ''; $$('.fold', letterWrap).forEach(f => f.remove());
+  $('#letterHint').hidden = false; $('#toWishRow').hidden = true;
 };
+leave.s4 = () => { Amb.mood(1); veil.classList.remove('on'); };
 enter.s4 = (run, b) => {
-  FX.calm();   // let the party settle
-  play(stage4, [{ opacity: 0, transform: 'translateY(-40px) rotate(-4deg)' }, { opacity: 1, transform: 'translateY(4px) rotate(1deg)', offset: .65 }, { transform: 'none' }], { duration: 850, delay: b, easing: EASE.land });
-  // a small "I'm about to open" wiggle once it has landed
-  play(env2, [{ transform: 'none' }, { transform: 'rotate(-3deg)', offset: .25 }, { transform: 'rotate(2.5deg)', offset: .5 }, { transform: 'rotate(-1.2deg)', offset: .75 }, { transform: 'none' }], { duration: 700, delay: b + 1000, easing: 'ease-in-out', reduced: [{ opacity: 1 }, { opacity: 1 }] });
-  $$('#s4 .sticker').forEach((s, i) => placeSticker(s, b + 700 + i * 110));
-  play($('#s4 .bal'), [{ opacity: 0, transform: `translateY(${Math.round(innerHeight * .7)}px)` }, { opacity: 1, offset: .2 }, { transform: 'none' }], { duration: 1600, delay: b + 200, easing: 'cubic-bezier(.2,.7,.3,1)' });
-  fadeUp($('#letterHint'), b + 900);
+  FX.calm(); Amb.mood(.55); veil.classList.add('on');      // the party settles into a quieter mood
+  lightFairy($('#s4'), b + 300);
+  play(stage4, floatDown(110, 5, 12, 1), { duration: 2000, delay: b, easing: 'linear' });
+  play($('#ground4'), [{ opacity: 0, transform: 'scale(.4)' }, { opacity: 1, transform: 'none' }], { duration: 1900, delay: b + 100, easing: EASE.soft });
+  $$('#s4 .sticker').forEach((s, i) => placeSticker(s, b + 1600 + i * 230, run));
+  play($('#s4 .bal'), rise(Math.round(innerHeight * .7), 18), { duration: 3600, delay: b + 300, easing: 'linear' });
+  // a small "about to open" wiggle once it has landed
+  play(env2, [{ transform: 'none' }, { transform: 'rotate(-4deg)', offset: .2 }, { transform: 'rotate(3.5deg)', offset: .42 }, { transform: 'rotate(-2deg)', offset: .64 }, { transform: 'rotate(1deg)', offset: .84 }, { transform: 'none' }], { duration: 1200, delay: b + 2300, easing: 'ease-in-out', reduced: [{ opacity: 1 }, { opacity: 1 }] });
+  fadeUp($('#letterHint'), b + 2500, 12, 1000);
 };
+// the letter is cut into three slices that unfold in 3D, like a real folded letter
+function buildFold() {
+  const H = letter.offsetHeight, h1 = Math.round(H / 3), h2 = Math.round(H * 2 / 3);
+  const fold = document.createElement('div'); fold.className = 'fold'; fold.setAttribute('aria-hidden', 'true');
+  const band = (cls, top, bottom, origin, backTop, backH) => {
+    const el = document.createElement('div'); el.className = 'band ' + cls; el.style.transformOrigin = `50% ${origin}px`;
+    const face = letter.cloneNode(true); face.removeAttribute('id'); face.classList.add('face'); face.style.visibility = 'visible';
+    face.style.clipPath = `inset(${top}px 0 ${bottom}px 0)`;
+    const dh = $('.doodle-heart', face); if (dh) dh.style.visibility = 'hidden';
+    el.appendChild(face);
+    if (backH) { const bk = document.createElement('div'); bk.className = 'back'; Object.assign(bk.style, { top: backTop + 'px', height: backH + 'px' }); el.appendChild(bk); }
+    const sh = document.createElement('div'); sh.className = 'shade'; sh.style.clipPath = `inset(${top}px 0 ${bottom}px 0)`; el.appendChild(sh);
+    fold.appendChild(el); return el;
+  };
+  band('mid', h1, H - h2, 0, 0, 0);
+  const bot = band('bot', h2, 0, h2, h2, H - h2);
+  const top = band('top', 0, H - h1, h1, 0, h1);
+  top.style.transform = 'translateZ(2px) rotateX(-180deg)';     // top third folded down in front
+  bot.style.transform = 'translateZ(1px) rotateX(180deg)';      // bottom third folded up behind it
+  letterWrap.appendChild(fold);
+  return { fold, top, bot };
+}
 async function openLetter() {
   if (opened2 || state.scene !== 's4') return;
   opened2 = true;
-  const run = state.run, seal = $('.seal', env2);
-  env2.classList.remove('wiggle'); $('#letterHint').hidden = true; Music.paper();
-  await play(seal, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(18px) scale(.7) rotate(20deg)' }], { duration: 320, fill: 'forwards', keep: true });
+  const run = state.run;
+  env2.classList.remove('wiggle'); Music.paper();
+  play($('#letterHint'), [{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: 'forwards', keep: true });
+  await sealCrack(env2, run);
   if (!alive(run)) return;
-  env2.classList.add('open');                         // flap folds back, the paper slides up
-  await sleep(M(1250)); if (!alive(run)) return;
-  await play(stage4, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(40px) scale(.92)' }], { duration: 450, fill: 'forwards', easing: EASE.soft });
+  env2.classList.add('open');                          // flap folds back, a soft light, the folded letter slides up
+  await wait(2300); if (!alive(run)) return;
+  await play(box4, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(60px) scale(.94)' }], { duration: 850, fill: 'forwards', easing: EASE.soft });
   if (!alive(run)) return;
-  stage4.hidden = true; letterWrap.hidden = false; Music.chime();
-  // the letter unfolds into reading position (all text is already in place)
-  await play(letter, [
-    { opacity: 0, transform: 'perspective(1000px) rotateX(-78deg) scaleY(.35)' },
-    { opacity: 1, transform: 'perspective(1000px) rotateX(-22deg) scaleY(.75)', offset: .5 },
-    { transform: 'none' }], { duration: 900, easing: EASE.out });
-  const ps = $$('p', letter);
-  ps.forEach((p, i) => play(p, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 520, delay: i * 110, easing: 'ease-out' }));
-  const after = ps.length * 110 + 300;
-  drawLine($('.doodle-heart path', letter), after, 900);
-  play($('#letterPeek'), [{ transform: 'translateY(-60%) rotate(0deg)' }, { transform: 'translateY(6%) rotate(-10deg)', offset: .7 }, { transform: 'rotate(-7deg)' }], { duration: 750, delay: after + 500, easing: EASE.out });
-  await sleep(M(after + 900)); if (!alive(run)) return;
-  $('#toWish').hidden = false; fadeUp($('#toWish'), 0);
+  box4.hidden = true; $('#letterHint').hidden = true; letterWrap.hidden = false; Music.chime();
+  const peek = $('#letterPeek'); peek.classList.add('pre');
+  let after = 400;
+  if (state.reduced) {
+    await play(letter, [{ opacity: 0 }, { opacity: 1 }], { duration: 650 });
+  } else {
+    letter.style.visibility = 'hidden';
+    const F = buildFold();
+    await play(F.fold, [{ opacity: 0, transform: 'translateY(80px) scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 1000, easing: EASE.out });
+    if (!alive(run)) return;
+    await wait(300);
+    const unfold = (el, fromDeg, z) => {
+      play($('.shade', el), [{ opacity: 0 }, { opacity: 1, offset: .5 }, { opacity: 0 }], { duration: 1250, keep: true });
+      return play(el, [{ transform: `translateZ(${z}px) rotateX(${fromDeg}deg)` }, { transform: `translateZ(${z}px) rotateX(0deg)` }], { duration: 1250, easing: 'cubic-bezier(.45,.05,.25,1)', fill: 'forwards', keep: true });
+    };
+    Music.paper(); await unfold(F.top, -180, 2); if (!alive(run)) return;
+    Music.paper(); await unfold(F.bot, 180, 1); if (!alive(run)) return;
+    letter.style.visibility = ''; F.fold.remove();
+    after = 300;
+  }
+  // a little hand-drawn heart, and a cat peeking out from under the corner
+  drawLine($('.doodle-heart path', letter), after, 1300);
+  springPlay(peek, (p, u) => ({ opacity: Math.min(1, u * 6), transform: `translateY(${lerp(-60, 0, p).toFixed(1)}%) rotate(${lerp(0, -7, p).toFixed(2)}deg)` }), { zeta: .55, freq: .9, delay: after + 1100 });
+  await wait(after + 1700); if (!alive(run)) return;
+  $('#toWishRow').hidden = false; fadeUp($('#toWishRow'), 0, 16, 1000);
 }
 env2.addEventListener('click', openLetter);
 env2.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLetter(); } });
-$('#toWish').addEventListener('click', () => go('s5', { push: true }));
+nav($('#toWish'), 's5', 'iris');
 
 /* ================================================================
    S5 — make a wish
    ================================================================ */
-const cake = $('#cakeStage'), dim = $('#dim'), blowBtn = $('#blowBtn'), catL = $('#cakeCatL'), catR = $('#cakeCatR');
+const cake = $('#cakeStage'), dim = $('#dim'), blowBtn = $('#blowBtn'), catL = $('#cakeCatL'), catR = $('#cakeCatR'), fw = $('.flame-wrap', cake);
 let blown = false;
 reset.s5 = () => {
-  blown = false; cake.classList.remove('out'); dim.classList.remove('on'); blowBtn.disabled = true;   // unlocked once the cake is built
-  $('#blowRow').hidden = false; $('#wishNote').hidden = true; $('#toGift').hidden = true;
-  [catL, catR].forEach(k => k.classList.remove('celebrate'));
+  blown = false; cake.classList.remove('out', 'lightsout'); dim.classList.remove('on', 'dark'); blowBtn.disabled = true;
+  $('#blowRow').hidden = false; $('#wishNote').hidden = true; $('#toGiftRow').hidden = true;
+  [catL, catR].forEach(k => k.classList.remove('celebrate', 'hats'));
 };
-leave.s5 = () => { dim.classList.remove('on'); };
+leave.s5 = () => { dim.classList.remove('on', 'dark'); Amb.mood(1); };
 enter.s5 = (run, b) => {
-  play($('#wishTitle'), [{ opacity: 0, transform: 'translateY(-20px) scale(.9)' }, { opacity: 1, transform: 'scale(1.04)', offset: .7 }, { transform: 'none' }], { duration: 600, delay: b, easing: EASE.soft });
-  drawLine($('#s5 .squiggle path'), b + 300);
-  $$('#s5 .bal').forEach((bl, i) => play(bl, [{ opacity: 0, transform: `translateY(${Math.round(innerHeight * .8)}px)` }, { opacity: 1, offset: .15 }, { transform: 'none' }], { duration: 1600, delay: b + 100 + i * 150, easing: 'cubic-bezier(.2,.7,.3,1)' }));
-  $$('#s5 .decor .sticker').forEach((s, i) => placeSticker(s, b + 900 + i * 100));
-  // the cake is built: plate, bottom tier, top tier, candle
-  ['.c-plate', '.c-bot', '.c-top', '.c-candle'].forEach((sel, i) => play($(sel, cake), [
-    { opacity: 0, transform: `translateY(${-50 - i * 6}px)` }, { opacity: 1, transform: 'translateY(4px)', offset: .7 }, { transform: 'none' }], { duration: 520, delay: b + 300 + i * 220, easing: EASE.land }));
-  // the cats come in from opposite sides
-  $$('.cat-in', cake).forEach((c, i) => play(c, [
-    { opacity: 0, transform: `translateX(${i ? 130 : -130}%)` }, { opacity: 1, transform: `translateX(${i ? -6 : 6}%) translateY(-10%)`, offset: .65 }, { transform: 'none' }],
-    { duration: 750, delay: b + 1150 + i * 140, easing: EASE.soft }));
-  fadeUp($('#blowRow'), b + 1500);
-  setTimeout(() => { if (alive(run) && !blown) blowBtn.disabled = false; }, M(b + 1700));
+  Amb.mood(.85);
+  springPlay($('#wishTitle'), (p, u) => ({ opacity: Math.min(1, u * 4), transform: `translateY(${lerp(-26, 0, p).toFixed(1)}px) scale(${lerp(.82, 1, p).toFixed(3)})` }), { zeta: .5, freq: .95, delay: b });
+  drawLine($('#s5 .squiggle path'), b + 600, 1000);
+  $$('#s5 .bal').forEach((bl, i) => play(bl, rise(Math.round(innerHeight * .85), 20), { duration: 3600, delay: b + 200 + i * 420, easing: 'linear' }));
+  $$('#s5 .decor .sticker').forEach((s, i) => placeSticker(s, b + 1800 + i * 230, run));
+  // the cake is built: plate, bottom tier, top tier, candle — each lands with a little squash
+  const o = { zeta: .45, freq: 1.1 };
+  ['.c-plate', '.c-bot', '.c-top', '.c-candle'].forEach((sel, i) => springPlay($(sel, cake), (p, u) => {
+    const over = Math.max(0, p - 1);
+    return { opacity: Math.min(1, u * 6), transform: `translateY(${lerp(-90, 0, Math.min(1, p)).toFixed(1)}px) scale(${(1 + over * 1.1).toFixed(3)},${(1 - over * 1.5).toFixed(3)})` };
+  }, Object.assign({ delay: b + 600 + i * 380 }, o)));
+  // the candle lights itself with a spark
+  const lightAt = b + 600 + 3 * 380 + springTime(o, .8);
+  setTimeout(() => { if (!alive(run)) return; const [x, y] = centerOf(fw); FX.twinkle(x, y + 6, 4, 6); }, T(lightAt - 120));
+  play(fw, [{ opacity: 0, transform: 'scale(0,0)' }, { opacity: 1, transform: 'scale(1.3,1.45)', offset: .45 }, { opacity: 1, transform: 'none' }], { duration: 800, delay: lightAt, easing: EASE.soft });
+  play($('.glow', cake), [{ opacity: 0 }, { opacity: .45 }], { duration: 1200, delay: lightAt + 200 });
+  // the cats hop in from opposite sides and settle beside the cake
+  $$('.cat-in', cake).forEach((c, i) => play(c, hopFrames(i ? 160 : -160, 0, 26, 2), { duration: 1500, delay: lightAt + 500 + i * 300, easing: 'linear' }));
+  fadeUp($('#blowRow'), lightAt + 1500, 18, 1000);
+  setTimeout(() => { if (alive(run) && !blown) blowBtn.disabled = false; }, T(lightAt + 1600));
 };
 blowBtn.addEventListener('click', async () => {
-  if (blown || state.scene !== 's5') return;
+  if (blown || state.scene !== 's5' || blowBtn.disabled) return;
   blown = true; blowBtn.disabled = true;
   const run = state.run;
-  dim.classList.add('on'); Music.blow();
-  await sleep(M(450)); if (!alive(run)) return;
-  // the flame leans away, shrinks and goes out, leaving a curl of smoke
-  const fw = $('.flame-wrap', cake);
+  // the room dims to candlelight — a quiet moment to make the wish
+  const [fx, fy] = centerOf(fw); dim.style.setProperty('--cx', fx + 'px'); dim.style.setProperty('--cy', fy + 'px');
+  dim.classList.add('on');
+  play($('#blowRow'), [{ opacity: 1 }, { opacity: .35 }], { duration: 800, fill: 'forwards', keep: true });
+  play(fw, [{ transform: 'none' }, { transform: 'scale(1.15,1.25)' }], { duration: 1000, fill: 'forwards', keep: true, easing: 'ease-in-out' });
+  await wait(1700); if (!alive(run)) return;
+  // a little breath of wind…
+  Music.blow();
+  $$('.breath path', cake).forEach((pth, i) => {
+    const len = Math.ceil(pth.getTotalLength()) + 2;
+    pth.style.strokeDasharray = `${(len * .35).toFixed(0)} ${len}`;
+    play(pth, [{ strokeDashoffset: (len * .35).toFixed(0), opacity: 0 }, { opacity: .9, offset: .2 }, { strokeDashoffset: -len, opacity: 0 }], { duration: 1050, delay: i * 130, fill: 'forwards', keep: true, easing: 'cubic-bezier(.3,.1,.3,1)', reduced: [{ opacity: 0 }, { opacity: 0 }] });
+  });
+  await wait(500); if (!alive(run)) return;
+  // …the flame leans away, shrinks, and goes out
   cake.classList.add('out');
-  play($('.glow', cake), [{ opacity: .5 }, { opacity: 0 }], { duration: 500, fill: 'forwards', keep: true });
-  await play(fw, [{ transform: 'none' }, { transform: 'skewX(-26deg) translateX(-3px) scale(.85)', offset: .45 }, { transform: 'skewX(-34deg) translateX(-5px) scale(0,.15)', opacity: 0 }], { duration: 560, fill: 'forwards', easing: EASE.soft, keep: true, reduced: [{ opacity: 1 }, { opacity: 0 }] });
+  play($('.glow', cake), [{ opacity: .55 }, { opacity: 0 }], { duration: 800, fill: 'forwards', keep: true });
+  await play(fw, [{ transform: 'scale(1.15,1.25)' }, { transform: 'skewX(-22deg) translateX(4px) scale(1,1.1)', offset: .35 }, { transform: 'skewX(-30deg) translateX(8px) scale(.6,.5)', offset: .7 }, { transform: 'skewX(-34deg) translateX(10px) scale(0,.1)', opacity: 0 }], { duration: 950, fill: 'forwards', easing: EASE.soft, keep: true, reduced: [{ opacity: 1 }, { opacity: 0 }] });
   if (!alive(run)) return;
-  play($('.smoke', cake), [
-    { opacity: 0, strokeDashoffset: 110, transform: 'translateY(0)' },
-    { opacity: .85, offset: .25 },
-    { opacity: 0, strokeDashoffset: 0, transform: 'translateY(-34px)' }], { duration: 1900, fill: 'forwards', easing: 'ease-out', keep: true });
-  await sleep(M(700)); if (!alive(run)) return;
-  dim.classList.remove('on');
-  // celebration: paws up, a little bounce, confetti from both sides
-  [catL, catR].forEach(k => { k.classList.remove('celebrate'); void k.offsetWidth; k.classList.add('celebrate'); });
+  // lights out — just a curl of smoke for a heartbeat
+  cake.classList.add('lightsout'); dim.classList.add('dark');
+  $$('.smoke', cake).forEach((s, i) => {
+    const len = Math.ceil(s.getTotalLength()) + 2; s.style.strokeDasharray = len;
+    play(s, [{ opacity: 0, strokeDashoffset: len, transform: 'translateY(0px)' }, { opacity: .95, offset: .2 }, { opacity: .7, strokeDashoffset: 0, offset: .6 }, { opacity: 0, strokeDashoffset: 0, transform: `translate(${i ? 6 : -4}px,-46px)` }], { duration: 3000, delay: i * 260, fill: 'forwards', keep: true, easing: 'ease-out' });
+  });
+  await wait(1500); if (!alive(run)) return;
+  // …and then: lights on, party! hats in the air, confetti from both sides
+  dim.classList.remove('on', 'dark'); cake.classList.remove('lightsout');
+  [catL, catR].forEach(k => { k.classList.remove('celebrate', 'hats'); void k.getBoundingClientRect(); k.classList.add('celebrate', 'hats'); });
   FX.cannon(-1); FX.cannon(1); Music.pop();
-  await sleep(M(900)); if (!alive(run)) return;
-  $('#blowRow').hidden = true; $('#wishNote').hidden = false; FX.calm();   // the party fades so the message gets the spotlight
-  play($('#wishNote'), [{ opacity: 0, transform: 'scale(.8) rotate(-4deg)' }, { opacity: 1, transform: 'scale(1.05) rotate(0deg)', offset: .65 }, { transform: 'rotate(-1deg)' }], { duration: 650, easing: EASE.soft });
-  await sleep(M(1300)); if (!alive(run)) return;
-  $('#toGift').hidden = false; fadeUp($('#toGift'), 0);
-  setTimeout(() => alive(run) && [catL, catR].forEach(k => k.classList.remove('celebrate')), 2200);
+  await wait(1700); if (!alive(run)) return;
+  $('#blowRow').hidden = true; $('#wishNote').hidden = false; FX.calm();
+  writeOn($('#wishNote'), 0, 1800);
+  await wait(2100); if (!alive(run)) return;
+  $('#toGiftRow').hidden = false; fadeUp($('#toGiftRow'), 0, 16, 1000);
+  setTimeout(() => alive(run) && [catL, catR].forEach(k => k.classList.remove('celebrate', 'hats')), T(1500));
 });
-$('#toGift').addEventListener('click', () => go('s6', { push: true }));
+nav($('#toGift'), 's6', 'iris');
 
 /* ================================================================
    S6 — the gift
@@ -1220,33 +1647,53 @@ let opened6 = false;
 reset.s6 = () => { opened6 = false; gift.classList.remove('open'); gift.classList.add('idle'); $('#giftHint').hidden = false; $('#giftMsg').hidden = true; kv.pause(); };
 leave.s6 = () => kv.pause();
 enter.s6 = (run, b) => {
-  play($('#giftTitle'), [{ opacity: 0, transform: 'translateY(-20px)' }, { opacity: 1, transform: 'none' }], { duration: 600, delay: b, easing: EASE.out });
-  drawLine($('#s6 .squiggle path'), b + 300);
-  play(gift, [{ opacity: 0, transform: 'translateY(-60px) scale(.9)' }, { opacity: 1, transform: 'translateY(6px)', offset: .7 }, { transform: 'none' }], { duration: 750, delay: b + 300, easing: EASE.land });
-  $$('#s6 .bal').forEach((bl, i) => play(bl, [{ opacity: 0, transform: `translateY(${Math.round(innerHeight * .8)}px)` }, { opacity: 1, offset: .15 }, { transform: 'none' }], { duration: 1600, delay: b + 100 + i * 150, easing: 'cubic-bezier(.2,.7,.3,1)' }));
-  $$('#s6 .sticker').forEach((s, i) => placeSticker(s, b + 800 + i * 100));
-  fadeUp($('#giftHint'), b + 900);
+  springPlay($('#giftTitle'), (p, u) => ({ opacity: Math.min(1, u * 4), transform: `translateY(${lerp(-26, 0, p).toFixed(1)}px) scale(${lerp(.82, 1, p).toFixed(3)})` }), { zeta: .5, freq: .95, delay: b });
+  drawLine($('#s6 .squiggle path'), b + 600, 1000);
+  springPlay(gift, (p, u) => { const over = Math.max(0, p - 1); return { opacity: Math.min(1, u * 6), transform: `translateY(${lerp(-130, 0, Math.min(1, p)).toFixed(1)}px) scale(${(1 + over).toFixed(3)},${(1 - over * 1.4).toFixed(3)})` }; }, { zeta: .42, freq: 1, delay: b + 700 });
+  $$('#s6 .bal').forEach((bl, i) => play(bl, rise(Math.round(innerHeight * .85), 20), { duration: 3600, delay: b + 200 + i * 420, easing: 'linear' }));
+  $$('#s6 .corner-cat').forEach(c => play(c, hopFrames(160, 0, 30, 2), { duration: 1500, delay: b + 1600, easing: 'linear' }));
+  $$('#s6 .decor .sticker').forEach((s, i) => placeSticker(s, b + 1500 + i * 230, run));
+  fadeUp($('#giftHint'), b + 2200, 12, 1000);
 };
 async function openGift() {
   if (opened6 || state.scene !== 's6') return;
   opened6 = true;
   const run = state.run;
-  gift.classList.remove('idle'); gift.classList.add('open'); $('#giftHint').hidden = true;
-  const [x, y] = centerOf(gift); FX.burst(x, y - 30, 170, 1.2); Music.pop();
-  await sleep(M(900)); if (!alive(run)) return;
-  $('#giftMsg').hidden = false; fadeUp($('#giftMsg'), 0, 20); FX.edges(50); Music.chime(); knightPlay();
-  setTimeout(() => alive(run) && $('#giftMsg').scrollIntoView({ behavior: state.reduced ? 'auto' : 'smooth', block: 'nearest' }), M(500));
+  gift.classList.remove('idle');
+  play($('#giftHint'), [{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards', keep: true });
+  // it rumbles harder and harder…
+  await play(gift, [
+    { transform: 'none' }, { transform: 'rotate(-3deg)', offset: .1 }, { transform: 'rotate(3deg)', offset: .2 }, { transform: 'rotate(-4deg) translateY(-2px)', offset: .3 },
+    { transform: 'rotate(5deg)', offset: .4 }, { transform: 'rotate(-6deg) translateY(-4px)', offset: .5 }, { transform: 'rotate(7deg)', offset: .6 },
+    { transform: 'rotate(-8deg) translateY(-6px) scale(1.03)', offset: .7 }, { transform: 'rotate(6deg) scale(1.06,.94)', offset: .82 }, { transform: 'translateY(-14px) scale(.96,1.06)', offset: .92 }, { transform: 'none' }],
+    { duration: 1100, easing: 'linear', keep: true, fill: 'none', reduced: [{ opacity: 1 }, { opacity: 1 }] });
+  if (!alive(run)) return;
+  // …then the lid pops off, light pours out, sparkles shoot up
+  gift.classList.add('open'); Music.pop();
+  const [x, y] = centerOf(gift); FX.fountain(x, y - 20, run); FX.burst(x, y - 30, 80, 1.1);
+  await wait(1200); if (!alive(run)) return;
+  // the message rises out of the box, the knight flutters down beside it
+  $('#giftMsg').hidden = false; Music.chime();
+  springPlay($('#giftCard'), (p, u) => ({ opacity: Math.min(1, u * 4), transform: `translateY(${lerp(-150, 0, p).toFixed(1)}px) scale(${lerp(.5, 1, p).toFixed(3)})` }), { zeta: .7, freq: .75 });
+  if (KN.src) { play(knight, fall(-2, -18, 30, -180), { duration: 1600, delay: 1000, easing: 'linear' }); setTimeout(() => alive(run) && knightPlay(), T(1400)); }
+  writeOn($('#madeLine'), 2400, 1500);
+  fadeUp($('#replayRow'), 3500, 16, 1000);
+  FX.edges(40);
+  setTimeout(() => alive(run) && $('#giftCard').scrollIntoView({ behavior: state.reduced ? 'auto' : 'smooth', block: 'start' }), T(900));
 }
 gift.addEventListener('click', openGift);
 gift.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openGift(); } });
-$('#replay').addEventListener('click', () => go('s1', { push: true }));
+$('#replay').addEventListener('click', () => go('s1', { push: true, type: 'fade' }));
 motionBtn.addEventListener('click', () => { if (!$('#giftMsg').hidden) knightPlay(); });
+// browsers pause muted video in background tabs; pick it back up when she returns
+document.addEventListener('visibilitychange', () => { if (!document.hidden && state.scene === 's6' && !$('#giftMsg').hidden) knightPlay(); });
 kv.addEventListener('click', () => { if (kv.paused) kv.play().catch(() => {}); else kv.pause(); });
 
 /* ================================================================
    start
    ================================================================ */
-addEventListener('resize', () => FX.resize());
+addEventListener('resize', () => { FX.resize(); Amb.resize(); shineMeasured = false; });
+applyMotion();
 (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => go(hashScene()));
 })();
 </script>

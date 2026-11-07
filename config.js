@@ -3,6 +3,9 @@ window.BIRTHDAY = {
 
   pageTitle: "Happy Birthday, Bebe 💙",
 
+  // How fast the animations play: 1 = normal, 0.8 = slower and dreamier, 1.2 = a bit quicker.
+  animationSpeed: 1,
+
 
   // Save your pictures in the photos folder named 1, 2, 3… (jpg, png or webp).
   // A missing picture just shows the empty "your photo here" frame.
