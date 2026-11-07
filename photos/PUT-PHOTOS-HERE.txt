@@ -1,0 +1,1 @@
+﻿Put your photos in this folder, then write their names in config.js (for example photos/1.jpg).
