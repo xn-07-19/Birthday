@@ -4,13 +4,15 @@ window.BIRTHDAY = {
   pageTitle: "Happy Birthday, Bebe 💙",
 
 
+  // Save your pictures in the photos folder named 1, 2, 3… (jpg, png or webp).
+  // A missing picture just shows the empty "your photo here" frame.
   photos: [
-    { src: "", caption: "Where our little story began." },
-    { src: "", caption: "One of my favorite days with you." },
-    { src: "", caption: "The little moments mean everything." },
-    { src: "", caption: "A memory I wish I could replay." },
-    { src: "", caption: "My favorite place is beside you." },
-    { src: "", caption: "Here’s to making more memories together." },
+    { src: "photos/1", caption: "Where our little story began." },
+    { src: "photos/2", caption: "One of my favorite days with you." },
+    { src: "photos/3", caption: "The little moments mean everything." },
+    { src: "photos/4", caption: "A memory I wish I could replay." },
+    { src: "photos/5", caption: "My favorite place is beside you." },
+    { src: "photos/6", caption: "Here’s to making more memories together." },
   ],
 
  
