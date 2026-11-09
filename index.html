@@ -23,7 +23,7 @@ body{font-family:var(--body); color:var(--ink); overflow:hidden; background:var(
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 :focus-visible{outline:3px dashed var(--blue);outline-offset:5px;border-radius:12px}
 svg.defs{position:absolute;width:0;height:0}
-.pre{opacity:0}
+.pre{opacity:0; pointer-events:none}
 
 /* ---------- scenes ---------- */
 .scene{
@@ -1419,46 +1419,45 @@ enter.s2 = (run, b) => {
 nav($('#toMemories'), 's3', 'turn');
 
 /* ================================================================
-   S3 — memory lane (photos land as they scroll into view)
+   S3 — memory lane: one memory at a time — the photo lands,
+   its message writes itself in, then the next photo comes
    ================================================================ */
-const toLetterRow = $('#toLetterRow');
-let galleryIO = null, dropQ = [], dropBusy = false;
+const s3 = $('#s3'), toLetterRow = $('#toLetterRow');
+const MEMORY = { land: 1350, tape: 1000, caption: 1300, write: 1200, next: 2800 };   // ms within each memory's turn
 reset.s3 = () => {
-  if (galleryIO) galleryIO.disconnect();
-  dropQ = []; dropBusy = false;
   frames.forEach(f => { f.classList.add('pre'); f.style.visibility = ''; });
   $$('.peeker', gallery).forEach(p => p.classList.add('pre'));
   toLetterRow.classList.add('pre');
 };
-leave.s3 = () => { if (galleryIO) galleryIO.disconnect(); };
 function dropFrame(f, run) {
   const i = frames.indexOf(f), r = +f.dataset.r, r0 = r + (i % 2 ? 1 : -1) * rand(14, 26);
-  play(f, fall(r, r0, rand(26, 44) * (i % 2 ? -1 : 1), -170), { duration: 1500, easing: 'linear' });
-  springPlay($('.tape', f), p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `translateX(-50%) translateY(${lerp(-16, 0, p).toFixed(1)}px) rotate(${lerp(-18, -3, p).toFixed(2)}deg) scale(${lerp(1.35, 1, p).toFixed(3)},${(1 - Math.abs(1 - p) * .4).toFixed(3)})` }), { zeta: .5, freq: 1.3, delay: 1150 });
-  writeOn($('p', f), 1400, 1100);
+  play(f, fall(r, r0, rand(26, 44) * (i % 2 ? -1 : 1), -170), { duration: MEMORY.land, easing: 'linear' });
+  springPlay($('.tape', f), p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `translateX(-50%) translateY(${lerp(-16, 0, p).toFixed(1)}px) rotate(${lerp(-18, -3, p).toFixed(2)}deg) scale(${lerp(1.35, 1, p).toFixed(3)},${(1 - Math.abs(1 - p) * .4).toFixed(3)})` }), { zeta: .5, freq: 1.3, delay: MEMORY.tape });
+  writeOn($('p', f), MEMORY.caption, MEMORY.write);
   const st = $('.stk', f);
-  if (st) { const base = st.style.transform || ''; springPlay(st, p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `${base} scale(${lerp(1.8, 1, p).toFixed(3)})` }), { zeta: .42, freq: 1.4, delay: 1900 }); }
-  const pk = $('.peeker', f.parentElement); if (pk) play(pk, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 1500 });
+  if (st) { const base = st.style.transform || ''; springPlay(st, p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `${base} scale(${lerp(1.8, 1, p).toFixed(3)})` }), { zeta: .42, freq: 1.4, delay: MEMORY.caption + 800 }); }
+  const pk = $('.peeker', f.parentElement); if (pk) play(pk, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: MEMORY.land });
   // a puff of glitter where it lands
-  setTimeout(() => { if (!alive(run)) return; const b = f.getBoundingClientRect(); FX.twinkle(b.left + 6, b.bottom - 6, 2, 8); FX.twinkle(b.right - 6, b.bottom - 6, 2, 8); }, T(1300));
+  setTimeout(() => { if (!alive(run)) return; const b = f.getBoundingClientRect(); FX.twinkle(b.left + 6, b.bottom - 6, 2, 8); FX.twinkle(b.right - 6, b.bottom - 6, 2, 8); }, T(MEMORY.land - 100));
 }
-function pumpDrops(run) {
-  if (dropBusy || !alive(run)) return;
-  const f = dropQ.shift(); if (!f) return;
-  dropBusy = true; dropFrame(f, run);
-  setTimeout(() => { dropBusy = false; pumpDrops(run); }, T(300));
+// glide the page so the next memory is on screen before it lands
+async function bringIntoView(el, run) {
+  const r = el.getBoundingClientRect();
+  if (r.top >= 70 && r.bottom <= innerHeight - 50) return;
+  s3.scrollTo({ top: s3.scrollTop + r.top + r.height / 2 - innerHeight / 2, behavior: state.reduced ? 'auto' : 'smooth' });
+  await wait(state.reduced ? 150 : 750);
 }
-function startGallery(run) {
-  if (galleryIO) galleryIO.disconnect();
-  galleryIO = new IntersectionObserver(es => {
-    es.forEach(e => {
-      if (!e.isIntersecting || !alive(run)) return;
-      galleryIO.unobserve(e.target);
-      if (e.target === toLetterRow) fadeUp(toLetterRow, 900, 18, 1100);
-      else { dropQ.push(e.target); pumpDrops(run); }
-    });
-  }, { root: $('#s3'), threshold: .15 });
-  frames.forEach(f => galleryIO.observe(f)); galleryIO.observe(toLetterRow);
+async function revealMemories(run) {
+  for (const f of frames) {
+    if (!alive(run)) return;
+    while (LB.isOpen && alive(run)) await sleep(250);      // wait while a photo is open in the viewer
+    await bringIntoView(f, run); if (!alive(run)) return;
+    dropFrame(f, run);
+    await wait(state.reduced ? 1200 : MEMORY.next);
+  }
+  if (!alive(run)) return;
+  await bringIntoView(toLetterRow, run); if (!alive(run)) return;
+  fadeUp(toLetterRow, 0, 18, 1000);
 }
 enter.s3 = (run, b) => {
   lightFairy($('#s3'), b + 200);
@@ -1466,7 +1465,7 @@ enter.s3 = (run, b) => {
   drawLine($('#s3 .squiggle path'), b + 1000, 1000);
   fadeUp($('#memHint'), b + 1300, 12, 1000);
   $$('#s3 .decor .sticker').forEach((s, i) => placeSticker(s, b + 1200 + i * 230, run));
-  setTimeout(() => alive(run) && startGallery(run), T(b + 1500));
+  setTimeout(() => alive(run) && revealMemories(run), T(b + 1700));
 };
 nav($('#toLetter'), 's4', 'dolly');
 
