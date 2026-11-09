@@ -211,6 +211,16 @@ svg.defs{position:absolute;width:0;height:0}
 /* ---------- S3 gallery ---------- */
 .gallery{display:grid; grid-template-columns:repeat(2,1fr); gap:34px 18px; width:100%; margin-top:30px; padding:0 4px}
 @media (min-width:720px){ .gallery{grid-template-columns:repeat(3,1fr); gap:40px 26px} }
+/* phones: a compact 3 × 2 album, so all six fit on screen once each has had its big moment */
+@media (max-width:719px){
+  .gallery{grid-template-columns:repeat(3,1fr); gap:26px 10px; margin-top:24px; padding:0}
+  .polaroid{padding:6px 6px 0}
+  .polaroid p{font-size:clamp(12.5px,3.6vw,15px); min-height:3.6em; padding:6px 1px 8px}
+  .polaroid .tape{width:46px; height:16px; top:-8px}
+  .polaroid .stk{width:30px; height:30px}
+  .polaroid .ph.empty div{font-size:13px}
+  .peeker{width:44px; top:-24px}
+}
 .pw{position:relative}
 .polaroid{position:relative; z-index:1; background:#fff; padding:9px 9px 0; border-radius:3px; cursor:pointer; transform:rotate(var(--r));
   box-shadow:0 2px 4px rgba(31,45,87,.08), 0 12px 24px rgba(31,45,87,.14); transition:transform .5s var(--ease), box-shadow .5s ease}
@@ -238,7 +248,13 @@ svg.defs{position:absolute;width:0;height:0}
 .lb-bg{position:absolute; inset:0; background:rgba(22,32,64,.6); -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); opacity:0; transition:opacity .5s ease}
 .lb.on .lb-bg{opacity:1} .lb.closing .lb-bg{opacity:0}
 .lb-body{position:relative}
-.lb-card{background:#fff; padding:12px 12px 0; border-radius:4px; box-shadow:0 30px 60px rgba(0,0,0,.35); max-width:min(92vw,560px); transform-origin:0 0}
+.lb-card{background:#fff; padding:12px 12px 0; border-radius:4px; box-shadow:0 30px 60px rgba(0,0,0,.35); max-width:min(92vw,560px); transform-origin:50% 50%}
+/* story mode: a lighter veil so the album can be seen filling up behind each memory */
+.lb.story .lb-bg{background:rgba(22,32,64,.4); -webkit-backdrop-filter:blur(1.5px); backdrop-filter:blur(1.5px)}
+.lb.story .lb-close,.lb.story #lbPrev{visibility:hidden}
+.lb-skip{display:none; margin:14px auto 0; padding:6px 10px; font-family:var(--round); font-weight:600; font-size:14px; color:#fff; opacity:.9; text-decoration:underline; text-underline-offset:3px}
+.lb.story .lb-skip{display:block}
+.lb.closing .lb-skip{opacity:0; transition:opacity .4s ease}
 .lb-img{display:block; max-width:100%; max-height:62vh; margin:0 auto; border-radius:2px}
 .lb-card p{font-family:var(--hand); font-size:clamp(22px,6vw,28px); color:var(--navy); text-align:center; padding:12px 6px 14px}
 .lb-nav{display:flex; align-items:center; justify-content:center; gap:16px; margin-top:16px; transition:opacity .4s ease}
@@ -322,7 +338,7 @@ svg.defs{position:absolute;width:0;height:0}
 .made{font-family:var(--hand); font-size:clamp(26px,7vw,32px); color:var(--blue); margin-top:22px}
 
 #amb{position:fixed; inset:0; width:100%; height:100%; z-index:8; pointer-events:none}
-#fx{position:fixed; inset:0; width:100%; height:100%; z-index:35; pointer-events:none}
+#fx{position:fixed; inset:0; width:100%; height:100%; z-index:45; pointer-events:none}
 #ytHolder{position:fixed; left:-9999px; width:1px; height:1px}
 
 /* ---------- less motion: calm fades, no loops, no 3D ---------- */
@@ -574,6 +590,7 @@ svg.defs{position:absolute;width:0;height:0}
   <div class="lb-body">
     <div class="lb-card" id="lbCard"><img class="lb-img" id="lbImg" alt=""><p id="lbCap"></p></div>
     <div class="lb-nav"><button id="lbPrev" aria-label="Previous photo">‹</button><span id="lbCount"></span><button id="lbNext" aria-label="Next photo">›</button></div>
+    <button class="lb-skip" id="lbSkip">Skip to all photos</button>
   </div>
 </div>
 
@@ -1169,7 +1186,8 @@ photos.forEach((p, i) => {
 });
 
 /* ================================================================
-   lightbox: the tapped frame grows into the viewer and shrinks back
+   lightbox: the tapped frame grows into the viewer and shrinks back.
+   Story mode: each memory gets its own big moment, then flies into the album.
    ================================================================ */
 // Decide what a finger swipe on the open photo means.
 // dx / dy: how far the finger moved in pixels (dx > 0 = moved right).
@@ -1180,7 +1198,7 @@ function swipeDirection(dx, dy) {
 }
 const LB = (() => {
   const lb = $('#lb'), card = $('#lbCard'), img = $('#lbImg'), cap = $('#lbCap'), count = $('#lbCount');
-  let idx = 0, lastFocus = null, hidden = null, closing = false;
+  let idx = 0, lastFocus = null, hidden = null, closing = false, story = null;
   function show(i, write) {
     idx = (i + photos.length) % photos.length;
     const p = photos[idx];
@@ -1188,47 +1206,125 @@ const LB = (() => {
     cap.textContent = p.caption; count.textContent = `${idx + 1} / ${photos.length}`;
     if (write) writeOn(cap, 0, 900);
   }
-  const flipFrom = (r, to) => `translate(${r.left - to.left}px,${r.top - to.top}px) scale(${r.width / to.width},${r.height / to.height})`;
-  const onScreen = r => r.bottom > 0 && r.top < innerHeight && r.width > 0;
+  const imgReady = () => img.complete ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 600); });
+  // centre + un-tilted size, so a flight lands exactly on a rotated frame
+  const box = el => { const r = el.getBoundingClientRect(); return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: el.offsetWidth, h: el.offsetHeight, top: r.top, bottom: r.bottom }; };
+  const flipTo = (a, b, rot = 0) => `translate(${(a.cx - b.cx).toFixed(1)}px,${(a.cy - b.cy).toFixed(1)}px) scale(${(a.w / b.w).toFixed(4)},${(a.h / b.h).toFixed(4)}) rotate(${rot}deg)`;
+  const onScreen = r => r.bottom > 0 && r.top < innerHeight && r.w > 0;
   async function open(i) {
     if (lb.classList.contains('on')) return;
     lastFocus = document.activeElement; show(i);
     lb.classList.remove('closing'); lb.classList.add('on');
-    if (!img.complete) await new Promise(r => { img.onload = img.onerror = r; setTimeout(r, 400); });
-    const from = frames[idx].getBoundingClientRect(), to = card.getBoundingClientRect();
+    await imgReady();
+    const from = box(frames[idx]), to = box(card);
     if (!state.reduced && onScreen(from)) {
       hidden = frames[idx]; hidden.style.visibility = 'hidden';
-      play(card, [{ transform: flipFrom(from, to) + ` rotate(${frames[idx].dataset.r}deg)`, boxShadow: '0 12px 24px rgba(31,45,87,.14)' }, { transform: 'none', boxShadow: '0 30px 60px rgba(0,0,0,.35)' }], { duration: 820, easing: EASE.out });
+      play(card, [{ transform: flipTo(from, to, frames[idx].dataset.r), boxShadow: '0 12px 24px rgba(31,45,87,.14)' }, { transform: 'none', boxShadow: '0 30px 60px rgba(0,0,0,.35)' }], { duration: 820, easing: EASE.out });
     } else play(card, [{ opacity: 0 }, { opacity: 1 }], { duration: 400 });
     writeOn(cap, 500, 900);
     $('#lbClose').focus({ preventScroll: true });
   }
   async function close() {
+    if (story) return skip();
     if (!lb.classList.contains('on') || closing) return;
     closing = true; lb.classList.add('closing');
-    const target = frames[idx], to = target.getBoundingClientRect(), from = card.getBoundingClientRect();
+    const target = frames[idx], to = box(target), from = box(card);
     if (hidden && hidden !== target) hidden.style.visibility = '';
     if (!state.reduced && onScreen(to)) {
       target.style.visibility = 'hidden'; hidden = target;
-      await play(card, [{ transform: 'none' }, { transform: flipFrom(to, from) + ` rotate(${target.dataset.r}deg)` }], { duration: 680, easing: EASE.soft, fill: 'forwards', keep: true });
+      await play(card, [{ transform: 'none' }, { transform: flipTo(to, from, target.dataset.r) }], { duration: 680, easing: EASE.soft, fill: 'forwards', keep: true });
     } else await play(card, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards', keep: true });
     if (hidden) hidden.style.visibility = ''; hidden = null;
     lb.classList.remove('on', 'closing'); card.getAnimations().forEach(a => a.cancel());
     closing = false;
     if (lastFocus) lastFocus.focus({ preventScroll: true });
   }
+
+  /* ---------- story mode ---------- */
+  // waits `ms`, or wakes straight away when › / a tap asks to move on
+  function hold(ms) {
+    return new Promise(res => {
+      if (!story || story.hurry) { if (story) story.hurry = false; return res(); }
+      const t = setTimeout(done, T(ms)); story.wake = done;
+      function done() { clearTimeout(t); if (story) story.wake = null; res(); }
+    });
+  }
+  // › / tap / swipe: finish whatever is mid-animation and cut the pause short
+  function hurry() {
+    if (!story) return;
+    story.hurry = true;
+    [card, cap].forEach(el => el.getAnimations().forEach(a => { if (a.id === 'e' && a.playState === 'running') a.finish(); }));
+    if (story.wake) { story.hurry = false; story.wake(); }
+  }
+  function skip() { if (!story) return; story.skip = true; hurry(); }
+  const going = run => story && !story.skip && alive(run);
+  // the card shrinks into its own frame in the album, which then takes its place
+  async function flyIn(i, run, place) {
+    const f = frames[i], sc = $('#s3');
+    let to = box(f);
+    if (to.top < 70 || to.bottom > innerHeight - 50) {
+      sc.scrollTo({ top: sc.scrollTop + to.cy - innerHeight / 2, behavior: state.reduced ? 'auto' : 'smooth' });
+      await wait(state.reduced ? 120 : 700);
+      if (!alive(run)) return;
+      to = box(f);
+    }
+    if (!state.reduced) await play(card, [{ transform: 'none', boxShadow: '0 30px 60px rgba(0,0,0,.35)' }, { transform: flipTo(to, box(card), f.dataset.r), boxShadow: '0 12px 24px rgba(31,45,87,.14)' }], { duration: 900, easing: 'cubic-bezier(.5,0,.25,1)', fill: 'forwards', keep: true });
+    place(f, run);
+    await play(card, [{ opacity: 1 }, { opacity: 0 }], { duration: 350, fill: 'forwards', keep: true });
+    card.style.visibility = 'hidden';
+  }
+  async function playStory(run, place) {
+    if (lb.classList.contains('on')) return;
+    story = { hurry: false, wake: null, skip: false };
+    lastFocus = document.activeElement;
+    lb.classList.remove('closing'); lb.classList.add('on', 'story');
+    $('#lbNext').focus({ preventScroll: true });
+    for (let i = 0; i < photos.length && going(run); i++) {
+      card.style.visibility = 'hidden'; card.getAnimations().forEach(a => a.cancel());
+      show(i); await imgReady();
+      if (!going(run)) break;
+      card.style.visibility = '';
+      // the memory arrives big…
+      play(card, [{ opacity: 0, transform: 'translateY(-46px) rotate(-5deg) scale(.88)' }, { opacity: 1, transform: 'translateY(6px) rotate(1.2deg) scale(1.01)', offset: .7 }, { opacity: 1, transform: 'none' }], { duration: 1000, easing: EASE.out });
+      setTimeout(() => { if (!story || !alive(run)) return; const b = box(card); FX.twinkle(b.cx - b.w / 2 + 10, b.top + 10, 3, 12); FX.twinkle(b.cx + b.w / 2 - 10, b.top + 10, 3, 12); }, T(750));
+      // …its message writes itself in, it stays a moment…
+      await writeOn(cap, 750, 1300);
+      if (!going(run)) break;
+      await hold(1800);
+      if (!going(run)) break;
+      // …then it flies into its place in the album
+      await flyIn(i, run, place);
+    }
+    // anything skipped appears in place, the overlay lifts: the whole album
+    frames.forEach(f => { if (f.classList.contains('pre')) place(f, run, true); });
+    story = null;
+    lb.classList.add('closing');
+    await wait(550);
+    lb.classList.remove('on', 'story', 'closing');
+    card.getAnimations().forEach(a => a.cancel()); card.style.visibility = '';
+    if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
+  }
+
   $('#lbClose').addEventListener('click', close);
-  $('#lbPrev').addEventListener('click', () => show(idx - 1, true));
-  $('#lbNext').addEventListener('click', () => show(idx + 1, true));
-  $('#lbBg').addEventListener('click', close);
+  $('#lbSkip').addEventListener('click', skip);
+  $('#lbPrev').addEventListener('click', () => { if (!story) show(idx - 1, true); });
+  $('#lbNext').addEventListener('click', () => { if (story) hurry(); else show(idx + 1, true); });
+  $('#lbBg').addEventListener('click', () => { if (story) hurry(); else close(); });
+  card.addEventListener('click', () => { if (story) hurry(); });
   document.addEventListener('keydown', e => {
     if (!lb.classList.contains('on')) return;
-    if (e.key === 'Escape') close(); else if (e.key === 'ArrowRight') show(idx + 1, true); else if (e.key === 'ArrowLeft') show(idx - 1, true);
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowRight') { if (story) hurry(); else show(idx + 1, true); }
+    else if (e.key === 'ArrowLeft' && !story) show(idx - 1, true);
   });
   let sx = 0, sy = 0;
   lb.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-  lb.addEventListener('touchend', e => { const t = e.changedTouches[0], dir = swipeDirection(t.clientX - sx, t.clientY - sy); if (dir) show(idx + dir, true); });
-  return { open, close, get isOpen() { return lb.classList.contains('on'); } };
+  lb.addEventListener('touchend', e => {
+    const t = e.changedTouches[0], dir = swipeDirection(t.clientX - sx, t.clientY - sy);
+    if (!dir) return;
+    if (story) { if (dir > 0) hurry(); } else show(idx + dir, true);
+  });
+  return { open, close, story: playStory, get isOpen() { return lb.classList.contains('on'); } };
 })();
 
 /* ================================================================
@@ -1419,44 +1515,44 @@ enter.s2 = (run, b) => {
 nav($('#toMemories'), 's3', 'turn');
 
 /* ================================================================
-   S3 — memory lane: one memory at a time — the photo lands,
-   its message writes itself in, then the next photo comes
+   S3 — memory lane: each memory first gets its own big moment
+   (photo, then its message), flies into its place in the album,
+   then the next one — and finally the whole album, all six together
    ================================================================ */
 const s3 = $('#s3'), toLetterRow = $('#toLetterRow');
-const MEMORY = { land: 1350, tape: 1000, caption: 1300, write: 1200, next: 2800 };   // ms within each memory's turn
 reset.s3 = () => {
   frames.forEach(f => { f.classList.add('pre'); f.style.visibility = ''; });
   $$('.peeker', gallery).forEach(p => p.classList.add('pre'));
   toLetterRow.classList.add('pre');
 };
-function dropFrame(f, run) {
-  const i = frames.indexOf(f), r = +f.dataset.r, r0 = r + (i % 2 ? 1 : -1) * rand(14, 26);
-  play(f, fall(r, r0, rand(26, 44) * (i % 2 ? -1 : 1), -170), { duration: MEMORY.land, easing: 'linear' });
-  springPlay($('.tape', f), p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `translateX(-50%) translateY(${lerp(-16, 0, p).toFixed(1)}px) rotate(${lerp(-18, -3, p).toFixed(2)}deg) scale(${lerp(1.35, 1, p).toFixed(3)},${(1 - Math.abs(1 - p) * .4).toFixed(3)})` }), { zeta: .5, freq: 1.3, delay: MEMORY.tape });
-  writeOn($('p', f), MEMORY.caption, MEMORY.write);
-  const st = $('.stk', f);
-  if (st) { const base = st.style.transform || ''; springPlay(st, p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `${base} scale(${lerp(1.8, 1, p).toFixed(3)})` }), { zeta: .42, freq: 1.4, delay: MEMORY.caption + 800 }); }
-  const pk = $('.peeker', f.parentElement); if (pk) play(pk, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: MEMORY.land });
-  // a puff of glitter where it lands
-  setTimeout(() => { if (!alive(run)) return; const b = f.getBoundingClientRect(); FX.twinkle(b.left + 6, b.bottom - 6, 2, 8); FX.twinkle(b.right - 6, b.bottom - 6, 2, 8); }, T(MEMORY.land - 100));
-}
-// glide the page so the next memory is on screen before it lands
-async function bringIntoView(el, run) {
-  const r = el.getBoundingClientRect();
-  if (r.top >= 70 && r.bottom <= innerHeight - 50) return;
-  s3.scrollTo({ top: s3.scrollTop + r.top + r.height / 2 - innerHeight / 2, behavior: state.reduced ? 'auto' : 'smooth' });
-  await wait(state.reduced ? 150 : 750);
-}
-async function revealMemories(run) {
-  for (const f of frames) {
-    if (!alive(run)) return;
-    while (LB.isOpen && alive(run)) await sleep(250);      // wait while a photo is open in the viewer
-    await bringIntoView(f, run); if (!alive(run)) return;
-    dropFrame(f, run);
-    await wait(state.reduced ? 1200 : MEMORY.next);
+// a memory settles into the album: tape pressed on, a little bump, a glint
+function placeFrame(f, run, quiet) {
+  f.classList.remove('pre');
+  const pk = $('.peeker', f.parentElement), st = $('.stk', f);
+  if (quiet || state.reduced) {
+    play(f, [{ opacity: 0 }, { opacity: 1 }], { duration: 500 });
+    if (pk) play(pk, [{ opacity: 0 }, { opacity: 1 }], { duration: 500 });
+    return;
   }
-  if (!alive(run)) return;
-  await bringIntoView(toLetterRow, run); if (!alive(run)) return;
+  const r = f.dataset.r;
+  play(f, [{ transform: `rotate(${r}deg) scale(1.06)` }, { transform: `rotate(${r}deg) scale(.98)`, offset: .5 }, { transform: `rotate(${r}deg) scale(1)` }], { duration: 450, easing: 'ease-out', keep: true, fill: 'none' });
+  springPlay($('.tape', f), p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `translateX(-50%) translateY(${lerp(-16, 0, p).toFixed(1)}px) rotate(${lerp(-18, -3, p).toFixed(2)}deg) scale(${lerp(1.35, 1, p).toFixed(3)},${(1 - Math.abs(1 - p) * .4).toFixed(3)})` }), { zeta: .5, freq: 1.3, delay: 120 });
+  if (st) { const base = st.style.transform || ''; springPlay(st, p => ({ opacity: Math.min(1, Math.max(0, p) * 3), transform: `${base} scale(${lerp(1.8, 1, p).toFixed(3)})` }), { zeta: .42, freq: 1.4, delay: 350 }); }
+  if (pk) play(pk, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 400 });
+  const b = f.getBoundingClientRect(); FX.twinkle(b.left + b.width / 2, b.top + b.height / 2, 4, b.width * .45);
+}
+// the album is complete: a sparkle runs across all six, then the way forward
+async function showAll(run) {
+  s3.scrollTo({ top: 0, behavior: state.reduced ? 'auto' : 'smooth' });
+  await wait(500); if (!alive(run)) return;
+  frames.forEach((f, i) => setTimeout(() => {
+    if (!alive(run)) return;
+    const b = f.getBoundingClientRect(), r = f.dataset.r;
+    FX.twinkle(b.left + b.width / 2, b.top + b.height * .4, 3, b.width * .4);
+    play(f, [{ transform: `rotate(${r}deg) scale(1)` }, { transform: `rotate(${r}deg) scale(1.05)`, offset: .4 }, { transform: `rotate(${r}deg) scale(1)` }], { duration: 650, easing: 'ease-in-out', keep: true, fill: 'none', reduced: [{ opacity: 1 }, { opacity: 1 }] });
+  }, T(i * 150)));
+  FX.edges(30);
+  await wait(frames.length * 150 + 500); if (!alive(run)) return;
   fadeUp(toLetterRow, 0, 18, 1000);
 }
 enter.s3 = (run, b) => {
@@ -1465,7 +1561,11 @@ enter.s3 = (run, b) => {
   drawLine($('#s3 .squiggle path'), b + 1000, 1000);
   fadeUp($('#memHint'), b + 1300, 12, 1000);
   $$('#s3 .decor .sticker').forEach((s, i) => placeSticker(s, b + 1200 + i * 230, run));
-  setTimeout(() => alive(run) && revealMemories(run), T(b + 1700));
+  setTimeout(async () => {
+    if (!alive(run)) return;
+    await LB.story(run, placeFrame);
+    if (alive(run)) showAll(run);
+  }, T(b + 1900));
 };
 nav($('#toLetter'), 's4', 'dolly');
 
